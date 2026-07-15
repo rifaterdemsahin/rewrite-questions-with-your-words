@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CCA-F Practice — Autonomy & Escalation</title>
+<style>
+  :root{
+    --ink:#1c2321;
+    --paper:#f6f4ee;
+    --panel:#ffffff;
+    --line:#d9d4c7;
+    --accent:#2f5d50;
+    --accent-soft:#e4ece8;
+    --warn:#8a4b3b;
+    --mono: 'SF Mono', 'JetBrains Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:24px; background:var(--paper); color:var(--ink);
+    font-family: Georgia, 'Iowan Old Style', serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:1000px; margin:0 auto;}
+  h1{font-size:1.05rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0 0 4px;}
+  .domain{font-family:var(--mono); font-size:.75rem; color:#6b6558; margin-bottom:18px;}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:6px;
+    padding:20px 24px; margin-bottom:18px;
+  }
+  .card h2{font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:var(--warn); margin:0 0 10px;}
+  .card p{margin:0 0 10px; font-size:.98rem;}
+  .constraints{font-family:var(--mono); font-size:.85rem; background:var(--accent-soft); border-radius:4px; padding:12px 16px;}
+  .constraints div{margin-bottom:4px;}
+  .options{display:grid; gap:8px; margin-top:6px;}
+  .opt{
+    border:1px solid var(--line); border-radius:5px; padding:10px 14px;
+    font-size:.92rem; background:#fdfcf9;
+  }
+  .opt b{color:var(--accent); font-family:var(--mono); margin-right:6px;}
+
+  textarea{
+    width:100%; min-height:110px; resize:vertical;
+    font-family:var(--mono); font-size:.9rem; color:var(--ink);
+    border:1px solid var(--line); border-radius:5px; padding:12px;
+    background:#fdfcf9;
+  }
+  .row{display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap;}
+  button{
+    font-family:var(--mono); font-size:.75rem; letter-spacing:.03em;
+    text-transform:uppercase; border:1px solid var(--accent); color:var(--accent);
+    background:transparent; padding:7px 12px; border-radius:4px; cursor:pointer;
+  }
+  button.active, button:hover{background:var(--accent); color:#fff;}
+  button.ghost{border-color:var(--line); color:#6b6558;}
+  button.ghost:hover{background:var(--line); color:var(--ink);}
+  .status{font-family:var(--mono); font-size:.72rem; color:#8a8578; margin-left:auto;}
+
+  canvas{
+    display:block; width:100%; height:340px;
+    border:1px dashed var(--line); border-radius:5px; background:
+      repeating-linear-gradient(0deg, transparent, transparent 23px, #eeeae0 24px),
+      #fdfcf9;
+    cursor:crosshair;
+  }
+  .hint{font-size:.75rem; color:#8a8578; margin-top:6px;}
+  .reveal{
+    margin-top:8px; padding:14px 16px; border-left:3px solid var(--accent);
+    background:var(--accent-soft); font-size:.9rem; display:none;
+  }
+  .reveal.shown{display:block;}
+  .reveal h3{margin:0 0 6px; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Claude Certified Architect — Practice</h1>
+  <div class="domain">Domain: Autonomy vs. Guardrails · Human-in-the-Loop Escalation Design</div>
+
+  <div class="card">
+    <h2>Scenario</h2>
+    <p>An asset manager runs a Claude-based "Trade Order Review Agent" that reads incoming order tickets and decides whether a trade can be routed straight to execution or must be escalated to a human trader for sign-off. Early production data shows the agent escalates almost everything — including routine, low-risk trades — because the team's only mechanism for controlling autonomy is a single line in the system prompt: <em>"Use your judgment about which trades are risky enough to need human review."</em> Traders are now buried in escalations, and the efficiency case for the agent is falling apart. Separately, compliance is worried about the opposite failure: a large, unusual trade slipping through as "low risk" because the model misjudged it.</p>
+    <div class="constraints">
+      <div><b>Efficiency SLA:</b> No more than 15% of trades may be escalated to a human.</div>
+      <div><b>Risk SLA:</b> 100% of trades above a defined notional/volatility threshold must be escalated — zero tolerance.</div>
+      <div><b>Auditability:</b> Every escalation/no-escalation decision must be traceable to a specific, inspectable reason — not "the model felt it was fine."</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Question</h2>
+    <p>Which redesign of the escalation logic best satisfies all three constraints?</p>
+    <div class="options">
+      <div class="opt"><b>A.</b> Rewrite the system prompt with a longer, more detailed description of what "risky" means, including several worked examples of risky vs. safe trades, so the model's judgment improves.</div>
+      <div class="opt"><b>B.</b> Insert a deterministic pre-check layer before the model even sees the ticket: a rules engine evaluates notional size, volatility band, and counterparty flags against fixed thresholds. Trades that trip any threshold are auto-escalated without model involvement. For trades under all thresholds, the model makes a routing recommendation, which is logged with its stated reasoning, but the model is never the one deciding whether a threshold-breaching trade escalates.</div>
+      <div class="opt"><b>C.</b> Have the model call an "escalate_trade" tool whenever it judges a trade risky, and simply trust that this tool call is the correct signal, since it's now expressed as structured tool use rather than free text.</div>
+      <div class="opt"><b>D.</b> Set escalation to happen automatically for every trade above a small fixed dollar amount (e.g., $10,000), regardless of any other factor, since a single simple rule is easy for compliance to understand.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Your answer — in your own words</h2>
+    <textarea id="answerBox" placeholder="Which option, and why — write it your own way..."></textarea>
+    <div class="row">
+      <button id="saveBtn">Save</button>
+      <button class="ghost" id="revealBtn">Reveal answer key</button>
+      <span class="status" id="status">not saved yet</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Whiteboard — sketch the flow</h2>
+    <p class="hint">Rectangle = decision/step box · Arrow = direction of flow · Text = label a box or arrow · click-drag to draw, click Text tool then click a spot to label it.</p>
+    <div class="row">
+      <button id="toolRect" class="active">Rectangle</button>
+      <button id="toolArrow">Arrow</button>
+      <button id="toolText">Text</button>
+      <button class="ghost" id="toolClear">Clear board</button>
+    </div>
+    <canvas id="board"></canvas>
+    <div class="hint" id="boardStatus">board not saved yet</div>
+  </div>
+
+  <div class="reveal" id="revealBox">
+    <h3>Answer key</h3>
+    <p><b>Correct: B.</b> A deterministic rules engine gates the zero-tolerance threshold before the model is ever consulted, so the risk SLA is structurally guaranteed rather than dependent on model judgment. The model only exercises discretion on the sub-threshold population, which is exactly where a bit of judgment is appropriate and where the 15% escalation ceiling becomes achievable, since it's no longer escalating things a fixed rule already caught. Logging the model's stated reasoning for each recommendation gives compliance an inspectable trail without making the model the final arbiter of the risk-critical cases.</p>
+    <p><b>Why A fails:</b> more detailed instructions and examples still leave "risky enough" as a judgment call the model makes fresh each time — it can reduce over-escalation somewhat, but can't drive the zero-tolerance risk SLA to true zero, since it's still probabilistic.</p>
+    <p><b>Why C fails:</b> wrapping the same judgment in a tool call doesn't change what's deciding — it's still the model's discretion, just expressed structurally. Structured tool use fixes *format*, not *authority over a zero-tolerance decision*.</p>
+    <p><b>Why D fails:</b> a single fixed-dollar threshold ignores volatility and counterparty risk entirely, so it will both escalate harmless large-but-safe trades (blowing the efficiency SLA) and fail to catch small-notional-but-high-volatility trades that are genuinely risky (blowing the risk SLA) — simplicity here doesn't map to the actual risk surface.</p>
+  </div>
+</div>
+
+<script>
+const KEY = 'cca_autonomy_q1';
+const answerBox = document.getElementById('answerBox');
+const status = document.getElementById('status');
+const revealBtn = document.getElementById('revealBtn');
+const revealBox = document.getElementById('revealBox');
+const saveBtn = document.getElementById('saveBtn');
+
+let revealed = false;
+revealBtn.addEventListener('click', () => {
+  revealed = !revealed;
+  revealBox.classList.toggle('shown', revealed);
+  revealBtn.textContent = revealed ? 'Hide answer key' : 'Reveal answer key';
+});
+
+async function saveAnswer(){
+  try{
+    await window.storage.set(KEY + ':answer', answerBox.value);
+    status.textContent = 'saved ' + new Date().toLocaleTimeString();
+  }catch(e){
+    status.textContent = 'save failed';
+  }
+}
+saveBtn.addEventListener('click', saveAnswer);
+
+async function loadAnswer(){
+  try{
+    const res = await window.storage.get(KEY + ':answer');
+    if(res && res.value){ answerBox.value = res.value; status.textContent = 'loaded from last visit'; }
+  }catch(e){ /* no prior save, that's fine */ }
+}
+
+// ---- Whiteboard ----
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+const boardStatus = document.getElementById('boardStatus');
+let shapes = [];
+let tool = 'rect';
+let drawing = false;
+let start = null;
+
+function resizeCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  render();
+}
+window.addEventListener('resize', resizeCanvas);
+
+function setTool(t){
+  tool = t;
+  ['toolRect','toolArrow','toolText'].forEach(id => document.getElementById(id).classList.remove('active'));
+  if(t==='rect') document.getElementById('toolRect').classList.add('active');
+  if(t==='arrow') document.getElementById('toolArrow').classList.add('active');
+  if(t==='text') document.getElementById('toolText').classList.add('active');
+}
+document.getElementById('toolRect').addEventListener('click', () => setTool('rect'));
+document.getElementById('toolArrow').addEventListener('click', () => setTool('arrow'));
+document.getElementById('toolText').addEventListener('click', () => setTool('text'));
+document.getElementById('toolClear').addEventListener('click', async () => {
+  shapes = [];
+  render();
+  try{ await window.storage.set(KEY + ':board', JSON.stringify(shapes)); }catch(e){}
+  boardStatus.textContent = 'board cleared';
+});
+
+function drawArrowHead(x1,y1,x2,y2){
+  const angle = Math.atan2(y2-y1, x2-x1);
+  const len = 10;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-len*Math.cos(angle-Math.PI/6), y2-len*Math.sin(angle-Math.PI/6));
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-len*Math.cos(angle+Math.PI/6), y2-len*Math.sin(angle+Math.PI/6));
+  ctx.stroke();
+}
+
+function render(){
+  const rect = canvas.getBoundingClientRect();
+  ctx.clearRect(0,0,rect.width,rect.height);
+  ctx.strokeStyle = '#2f5d50';
+  ctx.fillStyle = '#1c2321';
+  ctx.lineWidth = 1.6;
+  ctx.font = '13px monospace';
+  shapes.forEach(s => {
+    if(s.type === 'rect'){
+      ctx.strokeRect(Math.min(s.x1,s.x2), Math.min(s.y1,s.y2), Math.abs(s.x2-s.x1), Math.abs(s.y2-s.y1));
+      if(s.label) ctx.fillText(s.label, Math.min(s.x1,s.x2)+6, Math.min(s.y1,s.y2)+16);
+    } else if(s.type === 'arrow'){
+      ctx.beginPath();
+      ctx.moveTo(s.x1,s.y1);
+      ctx.lineTo(s.x2,s.y2);
+      ctx.stroke();
+      drawArrowHead(s.x1,s.y1,s.x2,s.y2);
+      if(s.label) ctx.fillText(s.label, (s.x1+s.x2)/2+4, (s.y1+s.y2)/2-4);
+    } else if(s.type === 'text'){
+      ctx.fillText(s.label, s.x1, s.y1);
+    }
+  });
+}
+
+function getPos(e){
+  const rect = canvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  const p = getPos(e);
+  if(tool === 'text'){
+    const label = prompt('Label text:');
+    if(label){ shapes.push({type:'text', x1:p.x, y1:p.y, label}); render(); persistBoard(); }
+    return;
+  }
+  drawing = true;
+  start = p;
+});
+canvas.addEventListener('mousemove', (e) => {
+  if(!drawing) return;
+  const p = getPos(e);
+  render();
+  ctx.strokeStyle = '#b7402f';
+  if(tool === 'rect'){
+    ctx.strokeRect(Math.min(start.x,p.x), Math.min(start.y,p.y), Math.abs(p.x-start.x), Math.abs(p.y-start.y));
+  } else if(tool === 'arrow'){
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    drawArrowHead(start.x,start.y,p.x,p.y);
+  }
+});
+canvas.addEventListener('mouseup', (e) => {
+  if(!drawing) return;
+  drawing = false;
+  const p = getPos(e);
+  if(Math.abs(p.x-start.x) < 4 && Math.abs(p.y-start.y) < 4) { render(); return; }
+  if(tool === 'rect'){
+    const label = prompt('Optional label for this box (leave blank for none):') || '';
+    shapes.push({type:'rect', x1:start.x, y1:start.y, x2:p.x, y2:p.y, label});
+  } else if(tool === 'arrow'){
+    const label = prompt('Optional label for this arrow (leave blank for none):') || '';
+    shapes.push({type:'arrow', x1:start.x, y1:start.y, x2:p.x, y2:p.y, label});
+  }
+  render();
+  persistBoard();
+});
+
+async function persistBoard(){
+  try{
+    await window.storage.set(KEY + ':board', JSON.stringify(shapes));
+    boardStatus.textContent = 'board saved ' + new Date().toLocaleTimeString();
+  }catch(e){
+    boardStatus.textContent = 'board save failed';
+  }
+}
+
+async function loadBoard(){
+  try{
+    const res = await window.storage.get(KEY + ':board');
+    if(res && res.value){ shapes = JSON.parse(res.value); boardStatus.textContent = 'board loaded from last visit'; }
+  }catch(e){ /* no prior save */ }
+  render();
+}
+
+(async function init(){
+  resizeCanvas();
+  await loadAnswer();
+  await loadBoard();
+})();
+</script>
+</body>
+</html>
