@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CCA-F Practice — Autonomy & Escalation</title>
+<title>CCA-F Practice — Claude AI Architect</title>
 <style>
   :root{
     --ink:#1c2321;
@@ -12,6 +12,7 @@
     --accent:#2f5d50;
     --accent-soft:#e4ece8;
     --warn:#8a4b3b;
+    --warn-soft:#f3e4df;
     --mono: 'SF Mono', 'JetBrains Mono', Consolas, monospace;
   }
   *{box-sizing:border-box;}
@@ -34,9 +35,36 @@
   .options{display:grid; gap:8px; margin-top:6px;}
   .opt{
     border:1px solid var(--line); border-radius:5px; padding:10px 14px;
-    font-size:.92rem; background:#fdfcf9;
+    font-size:.92rem; background:#fdfcf9; cursor:pointer;
+    transition: background .15s, border-color .15s;
   }
+  .opt:hover{border-color:var(--accent);}
   .opt b{color:var(--accent); font-family:var(--mono); margin-right:6px;}
+  .opt.picked{border-color:var(--accent); background:var(--accent-soft);}
+  .opt.correct-pick{border-color:var(--accent); background:var(--accent-soft); font-weight:bold;}
+  .opt.wrong-pick{border-color:var(--warn); background:var(--warn-soft);}
+  .opt.correct-reveal{border-color:var(--accent); border-style:dashed;}
+
+  .picker{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+  .picker label{font-family:var(--mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#6b6558;}
+  select#questionSelect{
+    flex:1; min-width:240px; font-family:var(--mono); font-size:.85rem;
+    padding:8px 10px; border:1px solid var(--line); border-radius:4px;
+    background:#fdfcf9; color:var(--ink);
+  }
+
+  .progressCard{padding:14px 24px;}
+  .progressBarOuter{width:100%; height:8px; border-radius:4px; background:var(--line); overflow:hidden;}
+  .progressBarInner{height:100%; width:0%; background:var(--accent); transition:width .25s;}
+  .progressText{font-family:var(--mono); font-size:.72rem; color:#6b6558; margin-top:8px;}
+
+  .gapList{display:flex; flex-direction:column; gap:4px; margin-top:8px;}
+  .gapItem{font-family:var(--mono); font-size:.8rem; padding:6px 10px; border-radius:4px; cursor:pointer; border:1px solid transparent;}
+  .gapItem:hover{background:var(--accent-soft);}
+  .gapItem.gap-correct{color:var(--accent);}
+  .gapItem.gap-incorrect{color:var(--warn); font-weight:bold;}
+  .gapItem.gap-pending{color:#8a8578;}
+  .gapIcon{display:inline-block; width:1.4em;}
 
   textarea{
     width:100%; min-height:110px; resize:vertical;
@@ -53,6 +81,8 @@
   button.active, button:hover{background:var(--accent); color:#fff;}
   button.ghost{border-color:var(--line); color:#6b6558;}
   button.ghost:hover{background:var(--line); color:var(--ink);}
+  button.ghost.active{border-color:var(--accent); color:var(--accent); background:var(--accent-soft);}
+  button:disabled{opacity:.4; cursor:not-allowed;}
   .status{font-family:var(--mono); font-size:.72rem; color:#8a8578; margin-left:auto;}
 
   canvas{
@@ -74,26 +104,40 @@
 <body>
 <div class="wrap">
   <h1>Claude Certified Architect — Practice</h1>
-  <div class="domain">Domain: Autonomy vs. Guardrails · Human-in-the-Loop Escalation Design</div>
+  <div class="domain" id="domain">Domain: loading…</div>
+
+  <div class="card progressCard">
+    <div class="progressBarOuter"><div class="progressBarInner" id="progressBarInner"></div></div>
+    <div class="progressText" id="progressText">loading progress…</div>
+  </div>
+
+  <div class="card picker">
+    <label for="questionSelect">Question</label>
+    <select id="questionSelect"></select>
+    <button class="ghost" id="wrongOnlyBtn">Focus: wrong only</button>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-top:0;">
+      <h2 style="margin:0;">Gap analysis</h2>
+      <button class="ghost" id="gapBtn" style="margin-left:auto;">Show gap analysis</button>
+    </div>
+    <div class="reveal" id="gapBox"></div>
+  </div>
 
   <div class="card">
     <h2>Scenario</h2>
-    <p>An asset manager runs a Claude-based "Trade Order Review Agent" that reads incoming order tickets and decides whether a trade can be routed straight to execution or must be escalated to a human trader for sign-off. Early production data shows the agent escalates almost everything — including routine, low-risk trades — because the team's only mechanism for controlling autonomy is a single line in the system prompt: <em>"Use your judgment about which trades are risky enough to need human review."</em> Traders are now buried in escalations, and the efficiency case for the agent is falling apart. Separately, compliance is worried about the opposite failure: a large, unusual trade slipping through as "low risk" because the model misjudged it.</p>
-    <div class="constraints">
-      <div><b>Efficiency SLA:</b> No more than 15% of trades may be escalated to a human.</div>
-      <div><b>Risk SLA:</b> 100% of trades above a defined notional/volatility threshold must be escalated — zero tolerance.</div>
-      <div><b>Auditability:</b> Every escalation/no-escalation decision must be traceable to a specific, inspectable reason — not "the model felt it was fine."</div>
-    </div>
+    <p id="scenarioText"></p>
+    <div class="constraints" id="constraintsBox"></div>
   </div>
 
   <div class="card">
     <h2>Question</h2>
-    <p>Which redesign of the escalation logic best satisfies all three constraints?</p>
-    <div class="options">
-      <div class="opt"><b>A.</b> Rewrite the system prompt with a longer, more detailed description of what "risky" means, including several worked examples of risky vs. safe trades, so the model's judgment improves.</div>
-      <div class="opt"><b>B.</b> Insert a deterministic pre-check layer before the model even sees the ticket: a rules engine evaluates notional size, volatility band, and counterparty flags against fixed thresholds. Trades that trip any threshold are auto-escalated without model involvement. For trades under all thresholds, the model makes a routing recommendation, which is logged with its stated reasoning, but the model is never the one deciding whether a threshold-breaching trade escalates.</div>
-      <div class="opt"><b>C.</b> Have the model call an "escalate_trade" tool whenever it judges a trade risky, and simply trust that this tool call is the correct signal, since it's now expressed as structured tool use rather than free text.</div>
-      <div class="opt"><b>D.</b> Set escalation to happen automatically for every trade above a small fixed dollar amount (e.g., $10,000), regardless of any other factor, since a single simple rule is easy for compliance to understand.</div>
+    <p id="questionText"></p>
+    <div class="options" id="optionsBox"></div>
+    <div class="row">
+      <button id="checkBtn">Check answer</button>
+      <span class="status" id="mcqStatus">not answered yet</span>
     </div>
   </div>
 
@@ -120,22 +164,55 @@
     <div class="hint" id="boardStatus">board not saved yet</div>
   </div>
 
-  <div class="reveal" id="revealBox">
-    <h3>Answer key</h3>
-    <p><b>Correct: B.</b> A deterministic rules engine gates the zero-tolerance threshold before the model is ever consulted, so the risk SLA is structurally guaranteed rather than dependent on model judgment. The model only exercises discretion on the sub-threshold population, which is exactly where a bit of judgment is appropriate and where the 15% escalation ceiling becomes achievable, since it's no longer escalating things a fixed rule already caught. Logging the model's stated reasoning for each recommendation gives compliance an inspectable trail without making the model the final arbiter of the risk-critical cases.</p>
-    <p><b>Why A fails:</b> more detailed instructions and examples still leave "risky enough" as a judgment call the model makes fresh each time — it can reduce over-escalation somewhat, but can't drive the zero-tolerance risk SLA to true zero, since it's still probabilistic.</p>
-    <p><b>Why C fails:</b> wrapping the same judgment in a tool call doesn't change what's deciding — it's still the model's discretion, just expressed structurally. Structured tool use fixes *format*, not *authority over a zero-tolerance decision*.</p>
-    <p><b>Why D fails:</b> a single fixed-dollar threshold ignores volatility and counterparty risk entirely, so it will both escalate harmless large-but-safe trades (blowing the efficiency SLA) and fail to catch small-notional-but-high-volatility trades that are genuinely risky (blowing the risk SLA) — simplicity here doesn't map to the actual risk surface.</p>
-  </div>
+  <div class="reveal" id="revealBox"></div>
 </div>
 
 <script>
-const KEY = 'cca_autonomy_q1';
+// ---- Cookie storage ----
+function setCookie(name, value, days){
+  const expires = new Date(Date.now() + days*24*60*60*1000).toUTCString();
+  document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
+}
+function getCookie(name){
+  const prefix = name + '=';
+  const parts = document.cookie.split('; ');
+  for(const part of parts){
+    if(part.indexOf(prefix) === 0) return decodeURIComponent(part.slice(prefix.length));
+  }
+  return null;
+}
+function getResult(qid){ return getCookie(qid + '_result'); }
+function getSelected(qid){ return getCookie(qid + '_selected'); }
+function setResult(qid, result, key){
+  setCookie(qid + '_result', result, 365);
+  setCookie(qid + '_selected', key, 365);
+}
+
+let questions = [];
+let current = null;
+let currentShuffled = [];
+let pickedKey = null;
+let wrongOnlyMode = false;
+
+const domainEl = document.getElementById('domain');
+const questionSelect = document.getElementById('questionSelect');
+const wrongOnlyBtn = document.getElementById('wrongOnlyBtn');
+const gapBtn = document.getElementById('gapBtn');
+const gapBox = document.getElementById('gapBox');
+const progressBarInner = document.getElementById('progressBarInner');
+const progressText = document.getElementById('progressText');
+const scenarioText = document.getElementById('scenarioText');
+const constraintsBox = document.getElementById('constraintsBox');
+const questionText = document.getElementById('questionText');
+const optionsBox = document.getElementById('optionsBox');
+const checkBtn = document.getElementById('checkBtn');
+const mcqStatus = document.getElementById('mcqStatus');
 const answerBox = document.getElementById('answerBox');
 const status = document.getElementById('status');
 const revealBtn = document.getElementById('revealBtn');
 const revealBox = document.getElementById('revealBox');
 const saveBtn = document.getElementById('saveBtn');
+const boardStatus = document.getElementById('boardStatus');
 
 let revealed = false;
 revealBtn.addEventListener('click', () => {
@@ -144,9 +221,9 @@ revealBtn.addEventListener('click', () => {
   revealBtn.textContent = revealed ? 'Hide answer key' : 'Reveal answer key';
 });
 
-async function saveAnswer(){
+function saveAnswer(){
   try{
-    await window.storage.set(KEY + ':answer', answerBox.value);
+    setCookie(current.id + '_answer', answerBox.value, 365);
     status.textContent = 'saved ' + new Date().toLocaleTimeString();
   }catch(e){
     status.textContent = 'save failed';
@@ -154,17 +231,89 @@ async function saveAnswer(){
 }
 saveBtn.addEventListener('click', saveAnswer);
 
-async function loadAnswer(){
-  try{
-    const res = await window.storage.get(KEY + ':answer');
-    if(res && res.value){ answerBox.value = res.value; status.textContent = 'loaded from last visit'; }
-  }catch(e){ /* no prior save, that's fine */ }
+function loadAnswer(){
+  const val = getCookie(current.id + '_answer');
+  answerBox.value = val || '';
+  status.textContent = val ? 'loaded from last visit' : 'not saved yet';
 }
+
+// ---- Progress & gap analysis ----
+function computeStats(){
+  return questions.map((q, i) => ({ id: q.id, index: i, domain: q.domain, result: getResult(q.id) }));
+}
+
+function updateProgress(){
+  const stats = computeStats();
+  const total = stats.length;
+  const correct = stats.filter(s => s.result === 'correct').length;
+  const incorrect = stats.filter(s => s.result === 'incorrect').length;
+  const attempted = correct + incorrect;
+  const pct = total ? Math.round((attempted / total) * 100) : 0;
+  progressBarInner.style.width = pct + '%';
+  progressText.textContent = attempted + '/' + total + ' answered · ' + correct + ' correct · ' + incorrect + ' to review';
+}
+
+function renderGapAnalysis(){
+  const stats = computeStats();
+  const correct = stats.filter(s => s.result === 'correct').length;
+  const incorrect = stats.filter(s => s.result === 'incorrect').length;
+  const total = stats.length;
+  let html = '<p><b>' + correct + '/' + total + '</b> correct · <b>' + incorrect + '</b> to review · <b>' + (total - correct - incorrect) + '</b> not attempted yet.</p>';
+  html += '<div class="gapList">' + stats.map(s => {
+    const icon = s.result === 'correct' ? '✓' : s.result === 'incorrect' ? '✗' : '·';
+    const cls = s.result === 'correct' ? 'gap-correct' : s.result === 'incorrect' ? 'gap-incorrect' : 'gap-pending';
+    return '<div class="gapItem ' + cls + '" data-qid="' + s.id + '"><span class="gapIcon">' + icon + '</span>Q' + (s.index + 1) + '. ' + s.domain + '</div>';
+  }).join('') + '</div>';
+  gapBox.innerHTML = html;
+  gapBox.querySelectorAll('.gapItem').forEach(el => {
+    el.addEventListener('click', () => {
+      wrongOnlyMode = false;
+      wrongOnlyBtn.classList.remove('active');
+      wrongOnlyBtn.textContent = 'Focus: wrong only';
+      buildQuestionSelect();
+      loadQuestion(el.dataset.qid);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+}
+
+gapBtn.addEventListener('click', () => {
+  const showing = gapBox.classList.contains('shown');
+  if(!showing) renderGapAnalysis();
+  gapBox.classList.toggle('shown');
+  gapBtn.textContent = gapBox.classList.contains('shown') ? 'Hide gap analysis' : 'Show gap analysis';
+});
+
+// ---- Question picker / wrong-only filter ----
+function buildQuestionSelect(){
+  let list = questions;
+  if(wrongOnlyMode){
+    list = questions.filter(q => getResult(q.id) === 'incorrect');
+  }
+  if(list.length === 0){
+    questionSelect.innerHTML = '<option value="">No wrong answers to review 🎉</option>';
+    questionSelect.disabled = true;
+    return list;
+  }
+  questionSelect.disabled = false;
+  questionSelect.innerHTML = list.map(q => {
+    const idx = questions.indexOf(q);
+    return '<option value="' + q.id + '">Q' + (idx + 1) + '. ' + q.domain + '</option>';
+  }).join('');
+  return list;
+}
+
+wrongOnlyBtn.addEventListener('click', () => {
+  wrongOnlyMode = !wrongOnlyMode;
+  wrongOnlyBtn.classList.toggle('active', wrongOnlyMode);
+  wrongOnlyBtn.textContent = wrongOnlyMode ? 'Focus: wrong only ✓' : 'Focus: wrong only';
+  const list = buildQuestionSelect();
+  if(list.length) loadQuestion(list[0].id);
+});
 
 // ---- Whiteboard ----
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
-const boardStatus = document.getElementById('boardStatus');
 let shapes = [];
 let tool = 'rect';
 let drawing = false;
@@ -189,10 +338,10 @@ function setTool(t){
 document.getElementById('toolRect').addEventListener('click', () => setTool('rect'));
 document.getElementById('toolArrow').addEventListener('click', () => setTool('arrow'));
 document.getElementById('toolText').addEventListener('click', () => setTool('text'));
-document.getElementById('toolClear').addEventListener('click', async () => {
+document.getElementById('toolClear').addEventListener('click', () => {
   shapes = [];
   render();
-  try{ await window.storage.set(KEY + ':board', JSON.stringify(shapes)); }catch(e){}
+  try{ setCookie(current.id + '_board', JSON.stringify(shapes), 365); }catch(e){}
   boardStatus.textContent = 'board cleared';
 });
 
@@ -277,28 +426,150 @@ canvas.addEventListener('mouseup', (e) => {
   persistBoard();
 });
 
-async function persistBoard(){
+function persistBoard(){
   try{
-    await window.storage.set(KEY + ':board', JSON.stringify(shapes));
+    setCookie(current.id + '_board', JSON.stringify(shapes), 365);
     boardStatus.textContent = 'board saved ' + new Date().toLocaleTimeString();
   }catch(e){
     boardStatus.textContent = 'board save failed';
   }
 }
 
-async function loadBoard(){
+function loadBoard(){
+  shapes = [];
   try{
-    const res = await window.storage.get(KEY + ':board');
-    if(res && res.value){ shapes = JSON.parse(res.value); boardStatus.textContent = 'board loaded from last visit'; }
-  }catch(e){ /* no prior save */ }
+    const val = getCookie(current.id + '_board');
+    if(val){ shapes = JSON.parse(val); boardStatus.textContent = 'board loaded from last visit'; }
+    else{ boardStatus.textContent = 'board not saved yet'; }
+  }catch(e){ boardStatus.textContent = 'board not saved yet'; }
   render();
 }
 
-(async function init(){
+// ---- Option shuffling & grading ----
+function shuffleOptions(q){
+  const arr = q.options.map(o => ({ originalKey: o.key, text: o.text }));
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  const labels = ['A', 'B', 'C', 'D'];
+  arr.forEach((o, i) => { o.displayKey = labels[i] || String(i + 1); });
+  return arr;
+}
+
+function labelFor(originalKey){
+  const found = currentShuffled.find(o => o.originalKey === originalKey);
+  return found ? found.displayKey : originalKey;
+}
+
+function applyGrading(selectedKey, isCorrect){
+  optionsBox.querySelectorAll('.opt').forEach(o => o.classList.remove('picked','correct-pick','wrong-pick','correct-reveal'));
+  const pickedEl = optionsBox.querySelector('.opt[data-key="' + selectedKey + '"]');
+  if(pickedEl) pickedEl.classList.add(isCorrect ? 'correct-pick' : 'wrong-pick');
+  if(!isCorrect){
+    const correctEl = optionsBox.querySelector('.opt[data-key="' + current.correct + '"]');
+    if(correctEl) correctEl.classList.add('correct-reveal');
+  }
+}
+
+function attachOptionHandlers(){
+  optionsBox.querySelectorAll('.opt').forEach(el => {
+    el.addEventListener('click', () => {
+      pickedKey = el.dataset.key;
+      optionsBox.querySelectorAll('.opt').forEach(o => o.classList.remove('picked','correct-pick','wrong-pick','correct-reveal'));
+      el.classList.add('picked');
+      mcqStatus.textContent = 'selected ' + el.querySelector('b').textContent + ' — click Check answer';
+    });
+  });
+}
+
+checkBtn.addEventListener('click', () => {
+  if(!pickedKey){
+    mcqStatus.textContent = 'pick an option first';
+    return;
+  }
+  const isCorrect = pickedKey === current.correct;
+  setResult(current.id, isCorrect ? 'correct' : 'incorrect', pickedKey);
+  applyGrading(pickedKey, isCorrect);
+  mcqStatus.textContent = isCorrect ? '✓ correct' : '✗ not quite — correct answer highlighted';
+  revealed = true;
+  revealBox.classList.add('shown');
+  revealBtn.textContent = 'Hide answer key';
+  updateProgress();
+  if(gapBox.classList.contains('shown')) renderGapAnalysis();
+  if(wrongOnlyMode) buildQuestionSelect();
+});
+
+// ---- Question rendering ----
+function renderQuestion(){
+  domainEl.textContent = 'Domain: ' + current.domain;
+  scenarioText.innerHTML = current.scenario;
+
+  if(current.constraints && current.constraints.length){
+    constraintsBox.style.display = '';
+    constraintsBox.innerHTML = current.constraints.map(c => '<div><b>' + c.label + ':</b> ' + c.text + '</div>').join('');
+  } else {
+    constraintsBox.style.display = 'none';
+    constraintsBox.innerHTML = '';
+  }
+
+  questionText.textContent = current.question;
+
+  currentShuffled = shuffleOptions(current);
+  optionsBox.innerHTML = currentShuffled.map(o =>
+    '<div class="opt" data-key="' + o.originalKey + '"><b>' + o.displayKey + '.</b> ' + o.text + '</div>'
+  ).join('');
+  attachOptionHandlers();
+
+  const revealHtml = () => {
+    let html = '<h3>Answer key</h3><p><b>Correct: ' + labelFor(current.correct) + '.</b> ' + current.correctReason + '</p>';
+    current.options.forEach(o => {
+      if(o.key !== current.correct){
+        html += '<p><b>Why ' + labelFor(o.key) + ' fails:</b> ' + current.whyFail[o.key] + '</p>';
+      }
+    });
+    return html;
+  };
+  revealBox.innerHTML = revealHtml();
+
+  const priorSelected = getSelected(current.id);
+  const priorResult = getResult(current.id);
+  pickedKey = priorSelected || null;
+  if(priorSelected && priorResult){
+    applyGrading(priorSelected, priorResult === 'correct');
+    mcqStatus.textContent = priorResult === 'correct' ? '✓ correct' : '✗ not quite — correct answer highlighted';
+  } else {
+    mcqStatus.textContent = 'not answered yet';
+  }
+
+  revealed = !!priorResult;
+  revealBox.classList.toggle('shown', revealed);
+  revealBtn.textContent = revealed ? 'Hide answer key' : 'Reveal answer key';
+}
+
+function loadQuestion(id){
+  current = questions.find(q => q.id === id) || questions[0];
+  if([...questionSelect.options].some(o => o.value === current.id)){
+    questionSelect.value = current.id;
+  }
+  renderQuestion();
+  loadAnswer();
+  loadBoard();
+  updateProgress();
+}
+
+questionSelect.addEventListener('change', () => {
+  if(questionSelect.value) loadQuestion(questionSelect.value);
+});
+
+async function init(){
   resizeCanvas();
-  await loadAnswer();
-  await loadBoard();
-})();
+  const res = await fetch('questions.json');
+  questions = await res.json();
+  buildQuestionSelect();
+  loadQuestion(questions[0].id);
+}
+init();
 </script>
 </body>
 </html>
