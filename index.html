@@ -85,14 +85,61 @@
   button:disabled{opacity:.4; cursor:not-allowed;}
   .status{font-family:var(--mono); font-size:.72rem; color:#8a8578; margin-left:auto;}
 
-  canvas{
+  .hint{font-size:.75rem; color:#8a8578; margin-top:6px;}
+
+  /* ---- Whiteboard window ---- */
+  .wb-window{padding:0; overflow:hidden;}
+  .wb-titlebar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px; border-bottom:1px solid var(--line); background:#fbfaf6;
+  }
+  .wb-titlebar .wb-title{
+    font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:var(--warn);
+    font-family: Georgia, 'Iowan Old Style', serif;
+  }
+  .wb-close{
+    border:1px solid var(--line); color:#6b6558; background:transparent;
+    width:26px; height:26px; border-radius:4px; font-family:var(--mono); font-size:.85rem;
+    line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .wb-close:hover{background:var(--warn); border-color:var(--warn); color:#fff;}
+
+  .wb-textSection{padding:16px 20px 4px;}
+  .wb-textSection textarea{min-height:70px;}
+  .wb-textSection.collapsed{display:none;}
+
+  .wb-divider{display:flex; justify-content:center; padding:2px 20px;}
+  .wb-collapseBtn{
+    border:none; background:transparent; color:#8a8578; cursor:pointer;
+    width:100%; padding:4px 0; display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .wb-collapseBtn:hover{color:var(--accent);}
+  .wb-collapseBtn::before, .wb-collapseBtn::after{content:''; flex:1; height:1px; background:var(--line);}
+  .wb-collapseBtn svg{transition:transform .2s; flex:none;}
+  .wb-collapseBtn.collapsed svg{transform:rotate(180deg);}
+
+  .wb-drawSection{display:flex; gap:10px; padding:12px 20px 8px; align-items:flex-start;}
+  .wb-toolbar{display:flex; flex-direction:column; gap:6px; flex:none;}
+  .wb-toolbar button{
+    width:36px; height:36px; padding:0; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--line); color:#6b6558; background:#fdfcf9; border-radius:5px; cursor:pointer;
+  }
+  .wb-toolbar button:hover{border-color:var(--accent); color:var(--accent); background:#fdfcf9;}
+  .wb-toolbar button.active{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
+  .wb-toolbar button:disabled{opacity:.35; cursor:not-allowed;}
+  .wb-toolbar button:disabled:hover{border-color:var(--line); color:#6b6558; background:#fdfcf9;}
+  .wb-toolbar .wb-sep{height:1px; background:var(--line); margin:4px 2px;}
+
+  .wb-canvasWrap{flex:1; min-width:0;}
+  #wbCanvas{
     display:block; width:100%; height:340px;
     border:1px dashed var(--line); border-radius:5px; background:
       repeating-linear-gradient(0deg, transparent, transparent 23px, #eeeae0 24px),
       #fdfcf9;
-    cursor:crosshair;
+    cursor:crosshair; touch-action:none;
   }
-  .hint{font-size:.75rem; color:#8a8578; margin-top:6px;}
+  .wb-status{padding:0 20px 18px; font-size:.75rem; color:#8a8578;}
+
   .reveal{
     margin-top:8px; padding:14px 16px; border-left:3px solid var(--accent);
     background:var(--accent-soft); font-size:.9rem; display:none;
@@ -151,18 +198,50 @@
     </div>
   </div>
 
-  <div class="card">
-    <h2>Whiteboard — sketch the flow</h2>
-    <p class="hint">Rectangle = decision/step box · Arrow = direction of flow · Text = label a box or arrow · click-drag to draw, click Text tool then click a spot to label it.</p>
-    <div class="row">
-      <button id="toolRect" class="active">Rectangle</button>
-      <button id="toolArrow">Arrow</button>
-      <button id="toolText">Text</button>
-      <button class="ghost" id="toolClear">Clear board</button>
+  <div class="card wb-window" id="wbWindow">
+    <div class="wb-titlebar">
+      <span class="wb-title">Whiteboard</span>
+      <button class="wb-close" id="wbCloseBtn" title="Close whiteboard">✕</button>
     </div>
-    <canvas id="board"></canvas>
-    <div class="hint" id="boardStatus">board not saved yet</div>
+
+    <div class="wb-textSection" id="wbTextSection">
+      <textarea id="wbTextBox" placeholder="Type notes here..."></textarea>
+    </div>
+
+    <div class="wb-divider">
+      <button class="wb-collapseBtn" id="wbCollapseBtn" title="Collapse/expand notes">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+
+    <div class="wb-drawSection">
+      <div class="wb-toolbar">
+        <button id="wbPenBtn" class="active" title="Pen">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+        <button id="wbEraserBtn" title="Eraser">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H9L4.5 15.5a2 2 0 0 1 0-2.8l8-8a2 2 0 0 1 2.8 0l5 5a2 2 0 0 1 0 2.8L13 20"/><path d="M8 13l5 5"/></svg>
+        </button>
+        <div class="wb-sep"></div>
+        <button id="wbUndoBtn" title="Undo" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        </button>
+        <button id="wbRedoBtn" title="Redo" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+        </button>
+        <div class="wb-sep"></div>
+        <button id="wbClearBtn" title="Clear canvas">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        </button>
+      </div>
+      <div class="wb-canvasWrap">
+        <canvas id="wbCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="wb-status" id="wbStatus">whiteboard not saved yet</div>
   </div>
+  <button class="ghost" id="wbOpenBtn" style="display:none;">Open whiteboard</button>
 
   <div class="reveal" id="revealBox"></div>
 </div>
@@ -212,7 +291,6 @@ const status = document.getElementById('status');
 const revealBtn = document.getElementById('revealBtn');
 const revealBox = document.getElementById('revealBox');
 const saveBtn = document.getElementById('saveBtn');
-const boardStatus = document.getElementById('boardStatus');
 
 let revealed = false;
 revealBtn.addEventListener('click', () => {
@@ -312,137 +390,193 @@ wrongOnlyBtn.addEventListener('click', () => {
 });
 
 // ---- Whiteboard ----
-const canvas = document.getElementById('board');
-const ctx = canvas.getContext('2d');
-let shapes = [];
-let tool = 'rect';
-let drawing = false;
-let start = null;
+const wbWindow = document.getElementById('wbWindow');
+const wbOpenBtn = document.getElementById('wbOpenBtn');
+const wbCloseBtn = document.getElementById('wbCloseBtn');
+const wbTextSection = document.getElementById('wbTextSection');
+const wbTextBox = document.getElementById('wbTextBox');
+const wbCollapseBtn = document.getElementById('wbCollapseBtn');
+const wbPenBtn = document.getElementById('wbPenBtn');
+const wbEraserBtn = document.getElementById('wbEraserBtn');
+const wbUndoBtn = document.getElementById('wbUndoBtn');
+const wbRedoBtn = document.getElementById('wbRedoBtn');
+const wbClearBtn = document.getElementById('wbClearBtn');
+const wbStatus = document.getElementById('wbStatus');
+const wbCanvas = document.getElementById('wbCanvas');
+const wctx = wbCanvas.getContext('2d');
 
-function resizeCanvas(){
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * devicePixelRatio;
-  canvas.height = rect.height * devicePixelRatio;
-  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-  render();
-}
-window.addEventListener('resize', resizeCanvas);
+let wbTool = 'pen';
+let wbStrokes = [];
+let wbRedoStack = [];
+let wbCurrentStroke = null;
+let wbLastPoint = null;
+let wbTextSaveTimer = null;
 
-function setTool(t){
-  tool = t;
-  ['toolRect','toolArrow','toolText'].forEach(id => document.getElementById(id).classList.remove('active'));
-  if(t==='rect') document.getElementById('toolRect').classList.add('active');
-  if(t==='arrow') document.getElementById('toolArrow').classList.add('active');
-  if(t==='text') document.getElementById('toolText').classList.add('active');
+function wbUpdateToolbarState(){
+  wbPenBtn.classList.toggle('active', wbTool === 'pen');
+  wbEraserBtn.classList.toggle('active', wbTool === 'eraser');
+  wbUndoBtn.disabled = wbStrokes.length === 0;
+  wbRedoBtn.disabled = wbRedoStack.length === 0;
 }
-document.getElementById('toolRect').addEventListener('click', () => setTool('rect'));
-document.getElementById('toolArrow').addEventListener('click', () => setTool('arrow'));
-document.getElementById('toolText').addEventListener('click', () => setTool('text'));
-document.getElementById('toolClear').addEventListener('click', () => {
-  shapes = [];
-  render();
-  try{ setCookie(current.id + '_board', JSON.stringify(shapes), 365); }catch(e){}
-  boardStatus.textContent = 'board cleared';
+
+function wbSetTool(t){
+  wbTool = t;
+  wbUpdateToolbarState();
+}
+wbPenBtn.addEventListener('click', () => wbSetTool('pen'));
+wbEraserBtn.addEventListener('click', () => wbSetTool('eraser'));
+
+wbCloseBtn.addEventListener('click', () => {
+  wbWindow.style.display = 'none';
+  wbOpenBtn.style.display = '';
+});
+wbOpenBtn.addEventListener('click', () => {
+  wbWindow.style.display = '';
+  wbOpenBtn.style.display = 'none';
 });
 
-function drawArrowHead(x1,y1,x2,y2){
-  const angle = Math.atan2(y2-y1, x2-x1);
-  const len = 10;
-  ctx.beginPath();
-  ctx.moveTo(x2,y2);
-  ctx.lineTo(x2-len*Math.cos(angle-Math.PI/6), y2-len*Math.sin(angle-Math.PI/6));
-  ctx.moveTo(x2,y2);
-  ctx.lineTo(x2-len*Math.cos(angle+Math.PI/6), y2-len*Math.sin(angle+Math.PI/6));
-  ctx.stroke();
+let wbNotesCollapsed = false;
+wbCollapseBtn.addEventListener('click', () => {
+  wbNotesCollapsed = !wbNotesCollapsed;
+  wbTextSection.classList.toggle('collapsed', wbNotesCollapsed);
+  wbCollapseBtn.classList.toggle('collapsed', wbNotesCollapsed);
+});
+
+function wbSaveText(){
+  try{
+    setCookie(current.id + '_wb_text', wbTextBox.value, 365);
+    wbStatus.textContent = 'saved ' + new Date().toLocaleTimeString();
+  }catch(e){
+    wbStatus.textContent = 'save failed';
+  }
+}
+wbTextBox.addEventListener('input', () => {
+  clearTimeout(wbTextSaveTimer);
+  wbTextSaveTimer = setTimeout(wbSaveText, 400);
+});
+
+function wbPersistStrokes(){
+  try{
+    setCookie(current.id + '_wb_strokes', JSON.stringify(wbStrokes), 365);
+    wbStatus.textContent = 'saved ' + new Date().toLocaleTimeString();
+  }catch(e){
+    wbStatus.textContent = 'save failed';
+  }
 }
 
-function render(){
-  const rect = canvas.getBoundingClientRect();
-  ctx.clearRect(0,0,rect.width,rect.height);
-  ctx.strokeStyle = '#2f5d50';
-  ctx.fillStyle = '#1c2321';
-  ctx.lineWidth = 1.6;
-  ctx.font = '13px monospace';
-  shapes.forEach(s => {
-    if(s.type === 'rect'){
-      ctx.strokeRect(Math.min(s.x1,s.x2), Math.min(s.y1,s.y2), Math.abs(s.x2-s.x1), Math.abs(s.y2-s.y1));
-      if(s.label) ctx.fillText(s.label, Math.min(s.x1,s.x2)+6, Math.min(s.y1,s.y2)+16);
-    } else if(s.type === 'arrow'){
-      ctx.beginPath();
-      ctx.moveTo(s.x1,s.y1);
-      ctx.lineTo(s.x2,s.y2);
-      ctx.stroke();
-      drawArrowHead(s.x1,s.y1,s.x2,s.y2);
-      if(s.label) ctx.fillText(s.label, (s.x1+s.x2)/2+4, (s.y1+s.y2)/2-4);
-    } else if(s.type === 'text'){
-      ctx.fillText(s.label, s.x1, s.y1);
-    }
+function wbDrawStroke(s){
+  wctx.save();
+  wctx.lineJoin = 'round';
+  wctx.lineCap = 'round';
+  wctx.lineWidth = s.size;
+  if(s.tool === 'eraser'){
+    wctx.globalCompositeOperation = 'destination-out';
+    wctx.strokeStyle = 'rgba(0,0,0,1)';
+  } else {
+    wctx.globalCompositeOperation = 'source-over';
+    wctx.strokeStyle = s.color || '#2f5d50';
+  }
+  wctx.beginPath();
+  s.points.forEach((p, i) => {
+    if(i === 0) wctx.moveTo(p.x, p.y);
+    else wctx.lineTo(p.x, p.y);
   });
+  if(s.points.length === 1){
+    wctx.lineTo(s.points[0].x + 0.01, s.points[0].y + 0.01);
+  }
+  wctx.stroke();
+  wctx.restore();
 }
 
-function getPos(e){
-  const rect = canvas.getBoundingClientRect();
+function wbClearPixels(){
+  const rect = wbCanvas.getBoundingClientRect();
+  wctx.save();
+  wctx.globalCompositeOperation = 'destination-out';
+  wctx.fillStyle = 'rgba(0,0,0,1)';
+  wctx.fillRect(0, 0, rect.width, rect.height);
+  wctx.restore();
+}
+
+function wbReplayAll(){
+  wbClearPixels();
+  wbStrokes.forEach(wbDrawStroke);
+}
+
+function wbResizeCanvas(){
+  const rect = wbCanvas.getBoundingClientRect();
+  wbCanvas.width = rect.width * devicePixelRatio;
+  wbCanvas.height = rect.height * devicePixelRatio;
+  wctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  wbReplayAll();
+}
+window.addEventListener('resize', wbResizeCanvas);
+
+function wbGetPos(e){
+  const rect = wbCanvas.getBoundingClientRect();
   return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 }
 
-canvas.addEventListener('mousedown', (e) => {
-  const p = getPos(e);
-  if(tool === 'text'){
-    const label = prompt('Label text:');
-    if(label){ shapes.push({type:'text', x1:p.x, y1:p.y, label}); render(); persistBoard(); }
-    return;
-  }
-  drawing = true;
-  start = p;
-});
-canvas.addEventListener('mousemove', (e) => {
-  if(!drawing) return;
-  const p = getPos(e);
-  render();
-  ctx.strokeStyle = '#b7402f';
-  if(tool === 'rect'){
-    ctx.strokeRect(Math.min(start.x,p.x), Math.min(start.y,p.y), Math.abs(p.x-start.x), Math.abs(p.y-start.y));
-  } else if(tool === 'arrow'){
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    drawArrowHead(start.x,start.y,p.x,p.y);
-  }
-});
-canvas.addEventListener('mouseup', (e) => {
-  if(!drawing) return;
-  drawing = false;
-  const p = getPos(e);
-  if(Math.abs(p.x-start.x) < 4 && Math.abs(p.y-start.y) < 4) { render(); return; }
-  if(tool === 'rect'){
-    const label = prompt('Optional label for this box (leave blank for none):') || '';
-    shapes.push({type:'rect', x1:start.x, y1:start.y, x2:p.x, y2:p.y, label});
-  } else if(tool === 'arrow'){
-    const label = prompt('Optional label for this arrow (leave blank for none):') || '';
-    shapes.push({type:'arrow', x1:start.x, y1:start.y, x2:p.x, y2:p.y, label});
-  }
-  render();
-  persistBoard();
-});
-
-function persistBoard(){
-  try{
-    setCookie(current.id + '_board', JSON.stringify(shapes), 365);
-    boardStatus.textContent = 'board saved ' + new Date().toLocaleTimeString();
-  }catch(e){
-    boardStatus.textContent = 'board save failed';
-  }
+function wbPointerDown(e){
+  e.preventDefault();
+  const p = wbGetPos(e);
+  wbCurrentStroke = { tool: wbTool, size: wbTool === 'eraser' ? 18 : 2.2, color: '#2f5d50', points: [p] };
+  wbLastPoint = p;
 }
+function wbPointerMove(e){
+  if(!wbCurrentStroke) return;
+  const p = wbGetPos(e);
+  wbDrawStroke({ tool: wbCurrentStroke.tool, size: wbCurrentStroke.size, color: wbCurrentStroke.color, points: [wbLastPoint, p] });
+  wbCurrentStroke.points.push(p);
+  wbLastPoint = p;
+}
+function wbPointerUp(){
+  if(!wbCurrentStroke) return;
+  wbStrokes.push(wbCurrentStroke);
+  wbRedoStack = [];
+  wbCurrentStroke = null;
+  wbLastPoint = null;
+  wbUpdateToolbarState();
+  wbPersistStrokes();
+}
+wbCanvas.addEventListener('mousedown', wbPointerDown);
+wbCanvas.addEventListener('mousemove', wbPointerMove);
+window.addEventListener('mouseup', wbPointerUp);
 
-function loadBoard(){
-  shapes = [];
+wbUndoBtn.addEventListener('click', () => {
+  if(!wbStrokes.length) return;
+  wbRedoStack.push(wbStrokes.pop());
+  wbReplayAll();
+  wbUpdateToolbarState();
+  wbPersistStrokes();
+});
+wbRedoBtn.addEventListener('click', () => {
+  if(!wbRedoStack.length) return;
+  const s = wbRedoStack.pop();
+  wbStrokes.push(s);
+  wbDrawStroke(s);
+  wbUpdateToolbarState();
+  wbPersistStrokes();
+});
+wbClearBtn.addEventListener('click', () => {
+  wbStrokes = [];
+  wbRedoStack = [];
+  wbReplayAll();
+  wbUpdateToolbarState();
+  wbPersistStrokes();
+  wbStatus.textContent = 'whiteboard cleared';
+});
+
+function wbLoad(){
+  wbTextBox.value = getCookie(current.id + '_wb_text') || '';
+  wbStrokes = [];
+  wbRedoStack = [];
   try{
-    const val = getCookie(current.id + '_board');
-    if(val){ shapes = JSON.parse(val); boardStatus.textContent = 'board loaded from last visit'; }
-    else{ boardStatus.textContent = 'board not saved yet'; }
-  }catch(e){ boardStatus.textContent = 'board not saved yet'; }
-  render();
+    const val = getCookie(current.id + '_wb_strokes');
+    if(val) wbStrokes = JSON.parse(val);
+  }catch(e){ wbStrokes = []; }
+  wbReplayAll();
+  wbUpdateToolbarState();
+  wbStatus.textContent = (wbTextBox.value || wbStrokes.length) ? 'loaded from last visit' : 'whiteboard not saved yet';
 }
 
 // ---- Option shuffling & grading ----
@@ -554,7 +688,7 @@ function loadQuestion(id){
   }
   renderQuestion();
   loadAnswer();
-  loadBoard();
+  wbLoad();
   updateProgress();
 }
 
@@ -563,7 +697,7 @@ questionSelect.addEventListener('change', () => {
 });
 
 async function init(){
-  resizeCanvas();
+  wbResizeCanvas();
   const res = await fetch('questions.json');
   questions = await res.json();
   buildQuestionSelect();
