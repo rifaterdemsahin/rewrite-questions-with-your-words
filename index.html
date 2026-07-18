@@ -87,6 +87,10 @@
 
   .hint{font-size:.75rem; color:#8a8578; margin-top:6px;}
 
+  #timerDisplay.timer-flash-green{color:var(--accent); font-weight:bold; animation:timerFlashGreen 1s step-start infinite;}
+  #timerDisplay.timer-red-alert{color:var(--warn); font-weight:bold;}
+  @keyframes timerFlashGreen{50%{opacity:.25;}}
+
   /* ---- Whiteboard window ---- */
   .wb-window{padding:0; overflow:hidden;}
   .wb-titlebar{
@@ -236,6 +240,12 @@
     <h2>Question</h2>
     <p id="questionText"></p>
     <div class="options" id="optionsBox"></div>
+    <div class="row">
+      <button id="timerStartBtn">▶ Start</button>
+      <button class="ghost" id="timerStopBtn">⏸ Stop</button>
+      <button class="ghost" id="timerResetBtn">⟲ Reset</button>
+      <span class="status" id="timerDisplay">02:00</span>
+    </div>
     <div class="row">
       <button id="checkBtn">Check answer</button>
       <span class="status" id="mcqStatus">not answered yet</span>
@@ -671,6 +681,66 @@ function attachOptionHandlers(){
   });
 }
 
+// ---- Per-question 2-minute timer ----
+const TIMER_DURATION = 120;
+let timerRemaining = TIMER_DURATION;
+let timerRunning = false;
+let timerInterval = null;
+
+const timerDisplay = document.getElementById('timerDisplay');
+const timerStartBtn = document.getElementById('timerStartBtn');
+const timerStopBtn = document.getElementById('timerStopBtn');
+const timerResetBtn = document.getElementById('timerResetBtn');
+
+function timerFormat(sec){
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+function timerUpdateDisplay(){
+  timerDisplay.classList.remove('timer-flash-green', 'timer-red-alert');
+  timerDisplay.style.color = '';
+  if(timerRemaining <= 0){
+    timerDisplay.textContent = "Time's up!";
+    timerDisplay.style.color = 'var(--warn)';
+  } else {
+    timerDisplay.textContent = timerFormat(timerRemaining);
+    if(timerRemaining <= 30){
+      timerDisplay.classList.add('timer-red-alert');
+    } else if(timerRunning){
+      timerDisplay.classList.add('timer-flash-green');
+    }
+  }
+}
+
+function timerTick(){
+  timerRemaining -= 1;
+  timerUpdateDisplay();
+  if(timerRemaining <= 0) timerStop();
+}
+
+function timerStart(){
+  if(timerRunning || timerRemaining <= 0) return;
+  timerRunning = true;
+  timerInterval = setInterval(timerTick, 1000);
+  timerUpdateDisplay();
+}
+function timerStop(){
+  timerRunning = false;
+  clearInterval(timerInterval);
+  timerUpdateDisplay();
+}
+function timerReset(){
+  timerStop();
+  timerRemaining = TIMER_DURATION;
+  timerUpdateDisplay();
+}
+
+timerStartBtn.addEventListener('click', timerStart);
+timerStopBtn.addEventListener('click', timerStop);
+timerResetBtn.addEventListener('click', timerReset);
+
 checkBtn.addEventListener('click', () => {
   if(!pickedKey){
     mcqStatus.textContent = 'pick an option first';
@@ -744,6 +814,7 @@ function loadQuestion(id){
   loadAnswer();
   wbLoad();
   updateProgress();
+  timerReset();
 }
 
 questionSelect.addEventListener('change', () => {
