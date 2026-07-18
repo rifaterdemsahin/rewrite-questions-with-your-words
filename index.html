@@ -3,6 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <title>CCA-F Practice — Claude AI Architect</title>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    themeVariables: {
+      fontFamily: "'SF Mono','JetBrains Mono',Consolas,monospace",
+      primaryColor: '#e4ece8',
+      primaryBorderColor: '#2f5d50',
+      primaryTextColor: '#1c2321',
+      lineColor: '#8a8578',
+      background: '#fdfcf9'
+    }
+  });
+  window.mermaid = mermaid;
+  window.dispatchEvent(new Event('mermaid-ready'));
+</script>
 <style>
   :root{
     --ink:#1c2321;
@@ -150,6 +167,15 @@
   }
   .reveal.shown{display:block;}
   .reveal h3{margin:0 0 6px; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; color:var(--accent);}
+
+  .rationaleWrap{margin-top:16px;}
+  .rationaleWrap h3{margin:0 0 8px; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; color:var(--accent);}
+  .rationaleDiagramBox{
+    background:#fdfcf9; border:1px solid var(--line); border-radius:6px;
+    padding:14px; overflow-x:auto;
+  }
+  .rationaleDiagramBox svg{max-width:100%; height:auto;}
+  .rationaleLoading{font-family:var(--mono); font-size:.75rem; color:#8a8578;}
 
   /* ---- Breathing guide ---- */
   .breathingTopBtn{
@@ -702,6 +728,83 @@ function labelFor(originalKey){
   return found ? found.displayKey : originalKey;
 }
 
+// ---- Rationale diagram (Mermaid) ----
+let rationaleRenderSeq = 0;
+
+function waitForMermaid(){
+  return new Promise(resolve => {
+    if(window.mermaid) return resolve(window.mermaid);
+    window.addEventListener('mermaid-ready', () => resolve(window.mermaid), { once: true });
+  });
+}
+
+function mermaidEscape(text){
+  return String(text)
+    .replace(/<[^>]*>/g, '')
+    .replace(/"/g, "'")
+    .replace(/[\r\n]+/g, ' ')
+    .trim();
+}
+
+function truncateText(text, max){
+  return text.length > max ? text.slice(0, max - 1).trimEnd() + '…' : text;
+}
+
+const OPTION_EMOJI = { A: '🅰️', B: '🅱️', C: '🅲', D: '🅳' };
+
+function buildRationaleDiagram(q, shuffled){
+  const lines = ['flowchart TD'];
+  lines.push('  Q{{"🧠 ' + mermaidEscape(truncateText(q.question, 90)) + '"}}');
+  lines.push('  class Q qnode');
+  shuffled.forEach(o => {
+    const isCorrect = o.originalKey === q.correct;
+    const optId = 'opt' + o.displayKey;
+    const outId = 'out' + o.displayKey;
+    const optEmoji = OPTION_EMOJI[o.displayKey] || '🔹';
+    const outcomeEmoji = isCorrect ? '✅' : '❌';
+    const outcomeText = isCorrect ? q.correctReason : (q.whyFail && q.whyFail[o.originalKey]) || '';
+    lines.push('  Q --> ' + optId + '["' + optEmoji + ' ' + o.displayKey + '. ' + mermaidEscape(truncateText(o.text, 80)) + '"]');
+    lines.push('  ' + optId + ' --> ' + outId + '["' + outcomeEmoji + ' ' + mermaidEscape(truncateText(outcomeText, 120)) + '"]');
+    lines.push('  class ' + optId + ' ' + (isCorrect ? 'correctNode' : 'wrongNode'));
+    lines.push('  class ' + outId + ' ' + (isCorrect ? 'correctNode' : 'wrongNode'));
+  });
+  lines.push('  classDef qnode fill:#fdfcf9,stroke:#2f5d50,stroke-width:2px,color:#2f5d50,font-weight:bold;');
+  lines.push('  classDef correctNode fill:#e4ece8,stroke:#2f5d50,stroke-width:2px,color:#1c2321;');
+  lines.push('  classDef wrongNode fill:#f3e4df,stroke:#8a4b3b,stroke-width:2px,color:#1c2321;');
+  return lines.join('\n');
+}
+
+function renderRationaleDiagram(q, shuffled){
+  rationaleRenderSeq += 1;
+  const renderId = 'rationaleMermaid-' + rationaleRenderSeq;
+  const diagramSrc = buildRationaleDiagram(q, shuffled);
+  const html =
+    '<div class="rationaleWrap">' +
+      '<h3>🧭 Rationale map</h3>' +
+      '<div class="rationaleDiagramBox">' +
+        '<div class="rationaleLoading" id="' + renderId + '-status">rendering diagram…</div>' +
+        '<div class="mermaid" id="' + renderId + '"></div>' +
+      '</div>' +
+    '</div>';
+
+  waitForMermaid().then(mermaid => {
+    const el = document.getElementById(renderId);
+    const statusEl = document.getElementById(renderId + '-status');
+    if(!el) return; // question changed before mermaid was ready
+    mermaid.render(renderId + '-svg', diagramSrc).then(({ svg }) => {
+      const el2 = document.getElementById(renderId);
+      if(!el2) return;
+      el2.innerHTML = svg;
+      if(statusEl) statusEl.remove();
+    }).catch(err => {
+      console.error('Mermaid render failed', err);
+      if(statusEl) statusEl.textContent = '⚠️ diagram failed to render';
+    });
+  });
+
+  return html;
+}
+
 function applyGrading(selectedKey, isCorrect){
   optionsBox.querySelectorAll('.opt').forEach(o => o.classList.remove('picked','correct-pick','wrong-pick','correct-reveal'));
   const pickedEl = optionsBox.querySelector('.opt[data-key="' + selectedKey + '"]');
@@ -845,6 +948,7 @@ function renderQuestion(){
         html += '<p><b>Why ' + labelFor(o.key) + ' fails:</b> ' + current.whyFail[o.key] + '</p>';
       }
     });
+    html += renderRationaleDiagram(current, currentShuffled);
     return html;
   };
   revealBox.innerHTML = revealHtml();
