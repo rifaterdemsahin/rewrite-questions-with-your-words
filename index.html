@@ -169,13 +169,38 @@
   .reveal h3{margin:0 0 6px; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; color:var(--accent);}
 
   .rationaleWrap{margin-top:16px;}
-  .rationaleWrap h3{margin:0 0 8px; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; color:var(--accent);}
-  .rationaleDiagramBox{
-    background:#fdfcf9; border:1px solid var(--line); border-radius:6px;
-    padding:14px; overflow-x:auto;
-  }
-  .rationaleDiagramBox svg{max-width:100%; height:auto;}
+  .rationaleWrap h3{margin:0 0 6px; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; color:var(--accent);}
+  .rationaleWrap .hint{margin:0 0 10px;}
   .rationaleLoading{font-family:var(--mono); font-size:.75rem; color:#8a8578;}
+
+  /* ---- Rationale map modal ---- */
+  .rationaleOverlay{
+    display:none; position:fixed; inset:0; z-index:120;
+    background:rgba(28,35,33,.6); align-items:center; justify-content:center; padding:20px;
+  }
+  .rationaleOverlay.shown{display:flex;}
+  .rationaleModal{
+    background:var(--panel); border-radius:10px; padding:0;
+    max-width:960px; width:100%; max-height:88vh;
+    display:flex; flex-direction:column; position:relative;
+    box-shadow:0 8px 30px rgba(0,0,0,.3);
+    animation: timesUpPop .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .rationaleModalHead{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px; border-bottom:1px solid var(--line); flex:none;
+  }
+  .rationaleModalHead h2{margin:0; font-size:.95rem; letter-spacing:.06em; text-transform:uppercase; color:var(--accent);}
+  .rationaleModalCloseBtn{
+    border:1px solid var(--line); color:#6b6558; background:transparent;
+    width:26px; height:26px; border-radius:4px; font-family:var(--mono); font-size:.85rem;
+    line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex:none;
+  }
+  .rationaleModalCloseBtn:hover{background:var(--warn); border-color:var(--warn); color:#fff;}
+  .rationaleModalBody{
+    padding:20px; overflow:auto; background:#fdfcf9;
+  }
+  .rationaleModalBody svg{width:100%; height:auto; min-width:640px;}
 
   /* ---- Breathing guide ---- */
   .breathingTopBtn{
@@ -272,6 +297,16 @@
     <h2>Time's Up!</h2>
     <p>Your 2 minutes are up for this question.</p>
     <button class="timesUpCloseBtn" id="timesUpCloseBtn">Dismiss</button>
+  </div>
+</div>
+
+<div class="rationaleOverlay" id="rationaleOverlay">
+  <div class="rationaleModal">
+    <div class="rationaleModalHead">
+      <h2>🧭 Rationale Map</h2>
+      <button class="rationaleModalCloseBtn" id="rationaleModalCloseBtn" title="Close">✕</button>
+    </div>
+    <div class="rationaleModalBody" id="rationaleModalBody"></div>
   </div>
 </div>
 
@@ -429,6 +464,34 @@ revealBtn.addEventListener('click', () => {
   revealed = !revealed;
   revealBox.classList.toggle('shown', revealed);
   revealBtn.textContent = revealed ? 'Hide answer key' : 'Reveal answer key';
+});
+
+// ---- Rationale map modal ----
+const rationaleOverlay = document.getElementById('rationaleOverlay');
+const rationaleModalBody = document.getElementById('rationaleModalBody');
+const rationaleModalCloseBtn = document.getElementById('rationaleModalCloseBtn');
+
+function rationaleModalOpen(){
+  const qid = current.id;
+  rationaleModalBody.innerHTML = rationaleSvgCache[qid] || '<div class="rationaleLoading">rendering diagram…</div>';
+  rationaleOverlay.classList.add('shown');
+  if(!rationaleSvgCache[qid]){
+    ensureRationaleDiagram(current).then(svg => {
+      if(rationaleOverlay.classList.contains('shown') && current.id === qid){
+        rationaleModalBody.innerHTML = svg;
+      }
+    });
+  }
+}
+function rationaleModalClose(){
+  rationaleOverlay.classList.remove('shown');
+}
+rationaleModalCloseBtn.addEventListener('click', rationaleModalClose);
+rationaleOverlay.addEventListener('click', (e) => {
+  if(e.target === rationaleOverlay) rationaleModalClose();
+});
+revealBox.addEventListener('click', (e) => {
+  if(e.target && e.target.id === 'rationaleOpenBtn') rationaleModalOpen();
 });
 
 function saveAnswer(){
@@ -728,8 +791,9 @@ function labelFor(originalKey){
   return found ? found.displayKey : originalKey;
 }
 
-// ---- Rationale diagram (Mermaid) ----
+// ---- Rationale diagram (Mermaid), pre-generated & cached per question ----
 let rationaleRenderSeq = 0;
+const rationaleSvgCache = {};
 
 function waitForMermaid(){
   return new Promise(resolve => {
@@ -752,18 +816,18 @@ function truncateText(text, max){
 
 const OPTION_EMOJI = { A: '🅰️', B: '🅱️', C: '🅲', D: '🅳' };
 
-function buildRationaleDiagram(q, shuffled){
+function buildRationaleDiagram(q){
   const lines = ['flowchart TD'];
   lines.push('  Q{{"🧠 ' + mermaidEscape(truncateText(q.question, 90)) + '"}}');
   lines.push('  class Q qnode');
-  shuffled.forEach(o => {
-    const isCorrect = o.originalKey === q.correct;
-    const optId = 'opt' + o.displayKey;
-    const outId = 'out' + o.displayKey;
-    const optEmoji = OPTION_EMOJI[o.displayKey] || '🔹';
+  q.options.forEach(o => {
+    const isCorrect = o.key === q.correct;
+    const optId = 'opt' + o.key;
+    const outId = 'out' + o.key;
+    const optEmoji = OPTION_EMOJI[o.key] || '🔹';
     const outcomeEmoji = isCorrect ? '✅' : '❌';
-    const outcomeText = isCorrect ? q.correctReason : (q.whyFail && q.whyFail[o.originalKey]) || '';
-    lines.push('  Q --> ' + optId + '["' + optEmoji + ' ' + o.displayKey + '. ' + mermaidEscape(truncateText(o.text, 80)) + '"]');
+    const outcomeText = isCorrect ? q.correctReason : (q.whyFail && q.whyFail[o.key]) || '';
+    lines.push('  Q --> ' + optId + '["' + optEmoji + ' ' + o.key + '. ' + mermaidEscape(truncateText(o.text, 80)) + '"]');
     lines.push('  ' + optId + ' --> ' + outId + '["' + outcomeEmoji + ' ' + mermaidEscape(truncateText(outcomeText, 120)) + '"]');
     lines.push('  class ' + optId + ' ' + (isCorrect ? 'correctNode' : 'wrongNode'));
     lines.push('  class ' + outId + ' ' + (isCorrect ? 'correctNode' : 'wrongNode'));
@@ -774,35 +838,25 @@ function buildRationaleDiagram(q, shuffled){
   return lines.join('\n');
 }
 
-function renderRationaleDiagram(q, shuffled){
+function ensureRationaleDiagram(q){
+  if(rationaleSvgCache[q.id]) return Promise.resolve(rationaleSvgCache[q.id]);
   rationaleRenderSeq += 1;
-  const renderId = 'rationaleMermaid-' + rationaleRenderSeq;
-  const diagramSrc = buildRationaleDiagram(q, shuffled);
-  const html =
-    '<div class="rationaleWrap">' +
-      '<h3>🧭 Rationale map</h3>' +
-      '<div class="rationaleDiagramBox">' +
-        '<div class="rationaleLoading" id="' + renderId + '-status">rendering diagram…</div>' +
-        '<div class="mermaid" id="' + renderId + '"></div>' +
-      '</div>' +
-    '</div>';
-
-  waitForMermaid().then(mermaid => {
-    const el = document.getElementById(renderId);
-    const statusEl = document.getElementById(renderId + '-status');
-    if(!el) return; // question changed before mermaid was ready
-    mermaid.render(renderId + '-svg', diagramSrc).then(({ svg }) => {
-      const el2 = document.getElementById(renderId);
-      if(!el2) return;
-      el2.innerHTML = svg;
-      if(statusEl) statusEl.remove();
-    }).catch(err => {
-      console.error('Mermaid render failed', err);
-      if(statusEl) statusEl.textContent = '⚠️ diagram failed to render';
+  const renderId = 'rationaleSvg-' + rationaleRenderSeq;
+  const diagramSrc = buildRationaleDiagram(q);
+  return waitForMermaid()
+    .then(mermaid => mermaid.render(renderId, diagramSrc))
+    .then(({ svg }) => {
+      rationaleSvgCache[q.id] = svg;
+      return svg;
+    })
+    .catch(err => {
+      console.error('Mermaid render failed for', q.id, err);
+      return '<div class="rationaleLoading">⚠️ diagram failed to render</div>';
     });
-  });
+}
 
-  return html;
+function pregenerateAllRationaleDiagrams(){
+  questions.forEach(q => { ensureRationaleDiagram(q); });
 }
 
 function applyGrading(selectedKey, isCorrect){
@@ -831,6 +885,7 @@ const TIMER_DURATION = 120;
 let timerRemaining = TIMER_DURATION;
 let timerRunning = false;
 let timerInterval = null;
+let timeUpAt = null;
 
 const timerDisplay = document.getElementById('timerDisplay');
 const timerStartBtn = document.getElementById('timerStartBtn');
@@ -877,6 +932,7 @@ function timerTick(){
   timerUpdateDisplay();
   if(timerRemaining <= 0){
     timerStop();
+    timeUpAt = Date.now();
     timesUpShow();
   }
 }
@@ -895,6 +951,7 @@ function timerStop(){
 function timerReset(){
   timerStop();
   timerRemaining = TIMER_DURATION;
+  timeUpAt = null;
   timerUpdateDisplay();
   timesUpHide();
 }
@@ -911,7 +968,12 @@ checkBtn.addEventListener('click', () => {
   const isCorrect = pickedKey === current.correct;
   setResult(current.id, isCorrect ? 'correct' : 'incorrect', pickedKey);
   applyGrading(pickedKey, isCorrect);
-  mcqStatus.textContent = isCorrect ? '✓ correct' : '✗ not quite — correct answer highlighted';
+  let statusText = isCorrect ? '✓ correct' : '✗ not quite — correct answer highlighted';
+  if(timeUpAt){
+    const lateSec = Math.max(0, Math.round((Date.now() - timeUpAt) / 1000));
+    statusText += ' · ⏰ answered ' + lateSec + 's after time was up';
+  }
+  mcqStatus.textContent = statusText;
   revealed = true;
   revealBox.classList.add('shown');
   revealBtn.textContent = 'Hide answer key';
@@ -948,7 +1010,11 @@ function renderQuestion(){
         html += '<p><b>Why ' + labelFor(o.key) + ' fails:</b> ' + current.whyFail[o.key] + '</p>';
       }
     });
-    html += renderRationaleDiagram(current, currentShuffled);
+    html += '<div class="rationaleWrap">' +
+      '<h3>🧭 Rationale map</h3>' +
+      '<p class="hint">See a color-coded diagram of why each option succeeds or fails.</p>' +
+      '<button class="ghost" id="rationaleOpenBtn">🔍 Open rationale map</button>' +
+    '</div>';
     return html;
   };
   revealBox.innerHTML = revealHtml();
@@ -1060,6 +1126,7 @@ async function init(){
   questions = await res.json();
   buildQuestionSelect();
   loadQuestion(questions[0].id);
+  pregenerateAllRationaleDiagrams();
 }
 init();
 </script>
