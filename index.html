@@ -190,7 +190,15 @@
     display:flex; align-items:center; justify-content:space-between;
     padding:16px 20px; border-bottom:1px solid var(--line); flex:none;
   }
-  .rationaleModalHead h2{margin:0; font-size:.95rem; letter-spacing:.06em; text-transform:uppercase; color:var(--accent);}
+  .rationaleModalHead h2{margin:0; font-size:.95rem; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); flex:none;}
+  .rationaleZoomControls{display:flex; align-items:center; gap:6px; margin-left:auto; margin-right:14px;}
+  .rationaleZoomBtn{
+    border:1px solid var(--line); color:#6b6558; background:transparent;
+    width:26px; height:26px; border-radius:4px; font-family:var(--mono); font-size:.8rem;
+    line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .rationaleZoomBtn:hover{border-color:var(--accent); color:var(--accent);}
+  .rationaleZoomLabel{font-family:var(--mono); font-size:.72rem; color:#8a8578; min-width:3.2em; text-align:center;}
   .rationaleModalCloseBtn{
     border:1px solid var(--line); color:#6b6558; background:transparent;
     width:26px; height:26px; border-radius:4px; font-family:var(--mono); font-size:.85rem;
@@ -200,7 +208,8 @@
   .rationaleModalBody{
     padding:20px; overflow:auto; background:#fdfcf9;
   }
-  .rationaleModalBody svg{width:100%; height:auto; min-width:640px;}
+  .rationaleZoomWrap{transform-origin:0 0; transition:transform .15s ease; width:max-content;}
+  .rationaleZoomWrap svg{display:block; width:640px; height:auto;}
 
   /* ---- Breathing guide ---- */
   .breathingTopBtn{
@@ -304,6 +313,12 @@
   <div class="rationaleModal">
     <div class="rationaleModalHead">
       <h2>🧭 Rationale Map</h2>
+      <div class="rationaleZoomControls">
+        <button class="rationaleZoomBtn" id="rationaleZoomOutBtn" title="Zoom out">➖</button>
+        <span class="rationaleZoomLabel" id="rationaleZoomLabel">100%</span>
+        <button class="rationaleZoomBtn" id="rationaleZoomInBtn" title="Zoom in">➕</button>
+        <button class="rationaleZoomBtn" id="rationaleZoomResetBtn" title="Reset zoom">⟲</button>
+      </div>
       <button class="rationaleModalCloseBtn" id="rationaleModalCloseBtn" title="Close">✕</button>
     </div>
     <div class="rationaleModalBody" id="rationaleModalBody"></div>
@@ -321,7 +336,9 @@
 
   <div class="card picker">
     <label for="questionSelect">Question</label>
+    <button class="ghost" id="prevQuestionBtn" title="Previous question">◀ Prev</button>
     <select id="questionSelect"></select>
+    <button class="ghost" id="nextQuestionBtn" title="Next question">Next ▶</button>
     <button class="ghost" id="wrongOnlyBtn">Focus: wrong only</button>
   </div>
 
@@ -443,6 +460,8 @@ let wrongOnlyMode = false;
 const domainEl = document.getElementById('domain');
 const questionSelect = document.getElementById('questionSelect');
 const wrongOnlyBtn = document.getElementById('wrongOnlyBtn');
+const prevQuestionBtn = document.getElementById('prevQuestionBtn');
+const nextQuestionBtn = document.getElementById('nextQuestionBtn');
 const gapBtn = document.getElementById('gapBtn');
 const gapBox = document.getElementById('gapBox');
 const progressBarInner = document.getElementById('progressBarInner');
@@ -470,23 +489,50 @@ revealBtn.addEventListener('click', () => {
 const rationaleOverlay = document.getElementById('rationaleOverlay');
 const rationaleModalBody = document.getElementById('rationaleModalBody');
 const rationaleModalCloseBtn = document.getElementById('rationaleModalCloseBtn');
+const rationaleZoomInBtn = document.getElementById('rationaleZoomInBtn');
+const rationaleZoomOutBtn = document.getElementById('rationaleZoomOutBtn');
+const rationaleZoomResetBtn = document.getElementById('rationaleZoomResetBtn');
+const rationaleZoomLabel = document.getElementById('rationaleZoomLabel');
+
+const RATIONALE_ZOOM_MIN = 0.4;
+const RATIONALE_ZOOM_MAX = 3;
+let rationaleZoom = 1;
+
+function rationaleApplyZoom(){
+  const wrap = rationaleModalBody.querySelector('.rationaleZoomWrap');
+  if(wrap) wrap.style.transform = 'scale(' + rationaleZoom + ')';
+  rationaleZoomLabel.textContent = Math.round(rationaleZoom * 100) + '%';
+}
+function rationaleSetZoom(z){
+  rationaleZoom = Math.min(RATIONALE_ZOOM_MAX, Math.max(RATIONALE_ZOOM_MIN, +z.toFixed(2)));
+  rationaleApplyZoom();
+}
+function rationaleSetBody(svg){
+  rationaleModalBody.innerHTML = '<div class="rationaleZoomWrap">' + svg + '</div>';
+  rationaleSetZoom(1);
+}
 
 function rationaleModalOpen(){
   const qid = current.id;
-  rationaleModalBody.innerHTML = rationaleSvgCache[qid] || '<div class="rationaleLoading">rendering diagram…</div>';
-  rationaleOverlay.classList.add('shown');
-  if(!rationaleSvgCache[qid]){
+  if(rationaleSvgCache[qid]){
+    rationaleSetBody(rationaleSvgCache[qid]);
+  } else {
+    rationaleModalBody.innerHTML = '<div class="rationaleLoading">rendering diagram…</div>';
     ensureRationaleDiagram(current).then(svg => {
       if(rationaleOverlay.classList.contains('shown') && current.id === qid){
-        rationaleModalBody.innerHTML = svg;
+        rationaleSetBody(svg);
       }
     });
   }
+  rationaleOverlay.classList.add('shown');
 }
 function rationaleModalClose(){
   rationaleOverlay.classList.remove('shown');
 }
 rationaleModalCloseBtn.addEventListener('click', rationaleModalClose);
+rationaleZoomInBtn.addEventListener('click', () => rationaleSetZoom(rationaleZoom + 0.2));
+rationaleZoomOutBtn.addEventListener('click', () => rationaleSetZoom(rationaleZoom - 0.2));
+rationaleZoomResetBtn.addEventListener('click', () => rationaleSetZoom(1));
 rationaleOverlay.addEventListener('click', (e) => {
   if(e.target === rationaleOverlay) rationaleModalClose();
 });
@@ -558,6 +604,10 @@ gapBtn.addEventListener('click', () => {
 });
 
 // ---- Question picker / wrong-only filter ----
+function getActiveQuestionList(){
+  return wrongOnlyMode ? questions.filter(q => getResult(q.id) === 'incorrect') : questions;
+}
+
 function buildQuestionSelect(){
   let list = questions;
   if(wrongOnlyMode){
@@ -576,12 +626,31 @@ function buildQuestionSelect(){
   return list;
 }
 
+function updateQuestionNavButtons(){
+  const list = getActiveQuestionList();
+  const idx = current ? list.findIndex(q => q.id === current.id) : -1;
+  prevQuestionBtn.disabled = idx <= 0;
+  nextQuestionBtn.disabled = idx === -1 || idx >= list.length - 1;
+}
+
+function goToAdjacentQuestion(offset){
+  const list = getActiveQuestionList();
+  const idx = current ? list.findIndex(q => q.id === current.id) : -1;
+  const newIdx = idx + offset;
+  if(newIdx < 0 || newIdx >= list.length) return;
+  loadQuestion(list[newIdx].id);
+}
+
+prevQuestionBtn.addEventListener('click', () => goToAdjacentQuestion(-1));
+nextQuestionBtn.addEventListener('click', () => goToAdjacentQuestion(1));
+
 wrongOnlyBtn.addEventListener('click', () => {
   wrongOnlyMode = !wrongOnlyMode;
   wrongOnlyBtn.classList.toggle('active', wrongOnlyMode);
   wrongOnlyBtn.textContent = wrongOnlyMode ? 'Focus: wrong only ✓' : 'Focus: wrong only';
   const list = buildQuestionSelect();
   if(list.length) loadQuestion(list[0].id);
+  updateQuestionNavButtons();
 });
 
 // ---- Whiteboard ----
@@ -815,26 +884,35 @@ function truncateText(text, max){
 }
 
 const OPTION_EMOJI = { A: '🅰️', B: '🅱️', C: '🅲', D: '🅳' };
+const STEP_EMOJI = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣'];
+
+function splitSentences(text){
+  const matches = String(text).match(/[^.!?]+[.!?]+(\s+|$)/g);
+  const sentences = (matches || [text]).map(s => s.trim()).filter(Boolean);
+  return sentences.length ? sentences : [text];
+}
 
 function buildRationaleDiagram(q){
+  const correctOpt = q.options.find(o => o.key === q.correct);
+  const optEmoji = OPTION_EMOJI[correctOpt.key] || '🔹';
   const lines = ['flowchart TD'];
   lines.push('  Q{{"🧠 ' + mermaidEscape(truncateText(q.question, 90)) + '"}}');
   lines.push('  class Q qnode');
-  q.options.forEach(o => {
-    const isCorrect = o.key === q.correct;
-    const optId = 'opt' + o.key;
-    const outId = 'out' + o.key;
-    const optEmoji = OPTION_EMOJI[o.key] || '🔹';
-    const outcomeEmoji = isCorrect ? '✅' : '❌';
-    const outcomeText = isCorrect ? q.correctReason : (q.whyFail && q.whyFail[o.key]) || '';
-    lines.push('  Q --> ' + optId + '["' + optEmoji + ' ' + o.key + '. ' + mermaidEscape(truncateText(o.text, 80)) + '"]');
-    lines.push('  ' + optId + ' --> ' + outId + '["' + outcomeEmoji + ' ' + mermaidEscape(truncateText(outcomeText, 120)) + '"]');
-    lines.push('  class ' + optId + ' ' + (isCorrect ? 'correctNode' : 'wrongNode'));
-    lines.push('  class ' + outId + ' ' + (isCorrect ? 'correctNode' : 'wrongNode'));
+  lines.push('  Q --> ANS["✅ ' + optEmoji + ' ' + correctOpt.key + '. ' + mermaidEscape(truncateText(correctOpt.text, 100)) + '"]');
+  lines.push('  class ANS correctNode');
+
+  let prevId = 'ANS';
+  splitSentences(q.correctReason).forEach((sentence, i) => {
+    const nodeId = 'R' + i;
+    const emoji = STEP_EMOJI[i] || '💡';
+    lines.push('  ' + prevId + ' --> ' + nodeId + '["' + emoji + ' ' + mermaidEscape(truncateText(sentence, 140)) + '"]');
+    lines.push('  class ' + nodeId + ' stepNode');
+    prevId = nodeId;
   });
+
   lines.push('  classDef qnode fill:#fdfcf9,stroke:#2f5d50,stroke-width:2px,color:#2f5d50,font-weight:bold;');
-  lines.push('  classDef correctNode fill:#e4ece8,stroke:#2f5d50,stroke-width:2px,color:#1c2321;');
-  lines.push('  classDef wrongNode fill:#f3e4df,stroke:#8a4b3b,stroke-width:2px,color:#1c2321;');
+  lines.push('  classDef correctNode fill:#e4ece8,stroke:#2f5d50,stroke-width:2px,color:#1c2321,font-weight:bold;');
+  lines.push('  classDef stepNode fill:#fdfcf9,stroke:#2f5d50,stroke-width:1px,color:#1c2321;');
   return lines.join('\n');
 }
 
@@ -1034,6 +1112,12 @@ function renderQuestion(){
   revealBtn.textContent = revealed ? 'Hide answer key' : 'Reveal answer key';
 }
 
+function updateUrlForQuestion(id){
+  const url = new URL(window.location.href);
+  url.searchParams.set('q', id);
+  window.history.replaceState(null, '', url);
+}
+
 function loadQuestion(id){
   current = questions.find(q => q.id === id) || questions[0];
   if([...questionSelect.options].some(o => o.value === current.id)){
@@ -1044,6 +1128,8 @@ function loadQuestion(id){
   wbLoad();
   updateProgress();
   timerReset();
+  updateQuestionNavButtons();
+  updateUrlForQuestion(current.id);
 }
 
 questionSelect.addEventListener('change', () => {
@@ -1125,7 +1211,9 @@ async function init(){
   const res = await fetch('questions.json');
   questions = await res.json();
   buildQuestionSelect();
-  loadQuestion(questions[0].id);
+  const requestedId = new URLSearchParams(window.location.search).get('q');
+  const startId = (requestedId && questions.some(q => q.id === requestedId)) ? requestedId : questions[0].id;
+  loadQuestion(startId);
   pregenerateAllRationaleDiagrams();
 }
 init();
