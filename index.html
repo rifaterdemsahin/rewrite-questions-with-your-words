@@ -146,9 +146,63 @@
   }
   .reveal.shown{display:block;}
   .reveal h3{margin:0 0 6px; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; color:var(--accent);}
+
+  /* ---- Breathing guide ---- */
+  .breathingTopBtn{
+    position:fixed; top:16px; right:16px; z-index:50;
+    background:var(--panel); box-shadow:0 1px 4px rgba(0,0,0,.1);
+  }
+  .breathingOverlay{
+    display:none; position:fixed; inset:0; z-index:100;
+    background:rgba(28,35,33,.55); align-items:center; justify-content:center; padding:20px;
+  }
+  .breathingOverlay.shown{display:flex;}
+  .breathingModal{
+    background:var(--panel); border-radius:10px; padding:28px 32px 32px;
+    max-width:360px; width:100%; text-align:center; position:relative;
+    box-shadow:0 8px 30px rgba(0,0,0,.25);
+  }
+  .breathingModal h2{margin:0 0 4px; font-size:.95rem; letter-spacing:.06em; text-transform:uppercase; color:var(--accent);}
+  .breathingModal .breathingSub{font-size:.75rem; color:#8a8578; margin-bottom:18px; font-family:var(--mono);}
+  .breathingCloseBtn{
+    position:absolute; top:14px; right:14px;
+    border:1px solid var(--line); color:#6b6558; background:transparent;
+    width:26px; height:26px; border-radius:4px; font-family:var(--mono); font-size:.85rem;
+    line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .breathingCloseBtn:hover{background:var(--warn); border-color:var(--warn); color:#fff;}
+  .breathingCircleWrap{
+    width:200px; height:200px; margin:0 auto 18px; display:flex; align-items:center; justify-content:center;
+  }
+  .breathingCircle{
+    width:100px; height:100px; border-radius:50%;
+    background:var(--accent-soft); border:2px solid var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    font-size:2.2rem; transform:scale(1);
+    transition: transform 4s ease-in-out;
+  }
+  .breathingCircle.grow{ transform:scale(2); }
+  .breathingCircle.shrink{ transform:scale(1); }
+  .breathingPhaseText{font-size:1.1rem; font-weight:bold; color:var(--ink); margin-bottom:4px;}
+  .breathingCount{font-family:var(--mono); font-size:1.4rem; color:var(--accent);}
 </style>
 </head>
 <body>
+<button class="ghost breathingTopBtn" id="breathingBtn">🫁 Breathing Guide</button>
+
+<div class="breathingOverlay" id="breathingOverlay">
+  <div class="breathingModal">
+    <button class="breathingCloseBtn" id="breathingCloseBtn" title="Close">✕</button>
+    <h2>Box Breathing</h2>
+    <div class="breathingSub">🟩 4s in · 🤚 4s hold · 🟦 4s out · 🤚 4s hold</div>
+    <div class="breathingCircleWrap">
+      <div class="breathingCircle" id="breathingCircle">🫧</div>
+    </div>
+    <div class="breathingPhaseText" id="breathingPhaseText">Get ready…</div>
+    <div class="breathingCount" id="breathingCount">😌</div>
+  </div>
+</div>
+
 <div class="wrap">
   <h1>Claude Certified Architect — Practice</h1>
   <div class="domain" id="domain">Domain: loading…</div>
@@ -694,6 +748,76 @@ function loadQuestion(id){
 
 questionSelect.addEventListener('change', () => {
   if(questionSelect.value) loadQuestion(questionSelect.value);
+});
+
+// ---- Breathing guide ----
+const breathingBtn = document.getElementById('breathingBtn');
+const breathingOverlay = document.getElementById('breathingOverlay');
+const breathingCloseBtn = document.getElementById('breathingCloseBtn');
+const breathingCircle = document.getElementById('breathingCircle');
+const breathingPhaseText = document.getElementById('breathingPhaseText');
+const breathingCount = document.getElementById('breathingCount');
+
+const breathingPhases = [
+  { label: 'Inhale 🌬️', emoji: '🫁', circle: 'grow' },
+  { label: 'Hold 🤚', emoji: '✨', circle: 'grow' },
+  { label: 'Exhale 😮‍💨', emoji: '🍃', circle: 'shrink' },
+  { label: 'Hold 🤚', emoji: '🧘', circle: 'shrink' },
+];
+let breathingTimer = null;
+let breathingCountTimer = null;
+let breathingPhaseIndex = 0;
+
+function breathingRunPhase(){
+  const phase = breathingPhases[breathingPhaseIndex];
+  breathingPhaseText.textContent = phase.label;
+  breathingCircle.textContent = phase.emoji;
+  breathingCircle.classList.remove('grow', 'shrink');
+  void breathingCircle.offsetWidth;
+  breathingCircle.classList.add(phase.circle);
+
+  let secondsLeft = 4;
+  breathingCount.textContent = secondsLeft;
+  clearInterval(breathingCountTimer);
+  breathingCountTimer = setInterval(() => {
+    secondsLeft -= 1;
+    if(secondsLeft > 0) breathingCount.textContent = secondsLeft;
+  }, 1000);
+
+  breathingTimer = setTimeout(() => {
+    breathingPhaseIndex = (breathingPhaseIndex + 1) % breathingPhases.length;
+    breathingRunPhase();
+  }, 4000);
+}
+
+function breathingStart(){
+  breathingPhaseIndex = 0;
+  breathingCircle.classList.remove('grow', 'shrink');
+  breathingRunPhase();
+}
+
+function breathingStop(){
+  clearTimeout(breathingTimer);
+  clearInterval(breathingCountTimer);
+  breathingCircle.classList.remove('grow', 'shrink');
+  breathingCircle.textContent = '🫧';
+  breathingPhaseText.textContent = 'Get ready…';
+  breathingCount.textContent = '😌';
+}
+
+breathingBtn.addEventListener('click', () => {
+  breathingOverlay.classList.add('shown');
+  breathingStart();
+});
+breathingCloseBtn.addEventListener('click', () => {
+  breathingOverlay.classList.remove('shown');
+  breathingStop();
+});
+breathingOverlay.addEventListener('click', (e) => {
+  if(e.target === breathingOverlay){
+    breathingOverlay.classList.remove('shown');
+    breathingStop();
+  }
 });
 
 async function init(){
