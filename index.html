@@ -40,7 +40,8 @@
   }
   .wrap{max-width:1000px; margin:0 auto;}
   h1{font-size:1.05rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0 0 4px;}
-  .domain{font-family:var(--mono); font-size:.75rem; color:#6b6558; margin-bottom:18px;}
+  .domain{font-family:var(--mono); font-size:.75rem; color:#6b6558; margin-bottom:4px;}
+  .createdText{font-family:var(--mono); font-size:.7rem; color:#8a8578; margin-bottom:18px;}
   .card{
     background:var(--panel); border:1px solid var(--line); border-radius:6px;
     padding:20px 24px; margin-bottom:18px;
@@ -328,6 +329,7 @@
 <div class="wrap">
   <h1>Claude Certified Architect — Practice</h1>
   <div class="domain" id="domain">Domain: loading…</div>
+  <div class="createdText" id="createdText"></div>
 
   <div class="card progressCard">
     <div class="progressBarOuter"><div class="progressBarInner" id="progressBarInner"></div></div>
@@ -458,6 +460,7 @@ let pickedKey = null;
 let wrongOnlyMode = false;
 
 const domainEl = document.getElementById('domain');
+const createdTextEl = document.getElementById('createdText');
 const questionSelect = document.getElementById('questionSelect');
 const wrongOnlyBtn = document.getElementById('wrongOnlyBtn');
 const prevQuestionBtn = document.getElementById('prevQuestionBtn');
@@ -1063,6 +1066,7 @@ checkBtn.addEventListener('click', () => {
 // ---- Question rendering ----
 function renderQuestion(){
   domainEl.textContent = 'Domain: ' + current.domain;
+  createdTextEl.textContent = current.created ? '🗓️ Created ' + current.created : '';
   scenarioText.innerHTML = current.scenario;
 
   if(current.constraints && current.constraints.length){
