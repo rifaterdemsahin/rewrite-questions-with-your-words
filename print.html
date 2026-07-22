@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Print Answer Key — Claude AI Architect</title>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    themeVariables: {
+      fontFamily: "'SF Mono','JetBrains Mono',Consolas,monospace",
+      primaryColor: '#e4ece8',
+      primaryBorderColor: '#2f5d50',
+      primaryTextColor: '#1c2321',
+      lineColor: '#8a8578',
+      background: '#fdfcf9'
+    }
+  });
+  window.mermaid = mermaid;
+  window.dispatchEvent(new Event('mermaid-ready'));
+</script>
+<style>
+  :root{
+    --ink:#1c2321;
+    --paper:#f6f4ee;
+    --panel:#ffffff;
+    --line:#d9d4c7;
+    --accent:#2f5d50;
+    --accent-soft:#e4ece8;
+    --warn:#8a4b3b;
+    --warn-soft:#f3e4df;
+    --mono: 'SF Mono', 'JetBrains Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:24px; background:var(--paper); color:var(--ink);
+    font-family: Georgia, 'Iowan Old Style', serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:900px; margin:0 auto;}
+
+  .topMenu{
+    position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:14px;
+    background:var(--panel); border-bottom:1px solid var(--line);
+    padding:10px 24px; margin:-24px -24px 24px; flex-wrap:wrap;
+  }
+  .topMenuTabs{display:flex; gap:8px; flex-wrap:wrap;}
+  .topMenuTab{
+    font-family:var(--mono); font-size:.75rem; letter-spacing:.02em;
+    border:1px solid var(--line); color:#6b6558; background:transparent;
+    padding:7px 12px; border-radius:5px; cursor:pointer;
+  }
+  .topMenuTab:hover{border-color:var(--accent); color:var(--accent);}
+  .topMenuTab.active{border-color:var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:bold;}
+  .topMenuRight{margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .topMenuLink, .printBtn{
+    font-family:var(--mono); font-size:.75rem;
+    color:var(--accent); text-decoration:none; border:1px solid var(--accent);
+    padding:7px 12px; border-radius:5px; white-space:nowrap; background:transparent; cursor:pointer;
+  }
+  .topMenuLink:hover, .printBtn:hover{background:var(--accent); color:#fff;}
+  .printBtn:disabled{opacity:.4; cursor:not-allowed;}
+  .printBtn:disabled:hover{background:transparent; color:var(--accent);}
+
+  h1{font-size:1.05rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0 0 4px;}
+  .subtitle{font-family:var(--mono); font-size:.78rem; color:#6b6558; margin-bottom:18px;}
+
+  .printQuestion{
+    background:var(--panel); border:1px solid var(--line); border-radius:6px;
+    padding:26px 30px; margin-bottom:20px;
+    break-after:page; page-break-after:always;
+  }
+  .printQuestion:last-child{ break-after:auto; page-break-after:auto; }
+
+  .pqMeta{font-family:var(--mono); font-size:.72rem; color:#8a8578; margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em;}
+  .pqDomain{font-family:var(--mono); font-size:.78rem; color:var(--accent); margin-bottom:16px;}
+
+  .printQuestion h2{font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; color:var(--warn); margin:16px 0 8px;}
+  .printQuestion h2:first-of-type{margin-top:0;}
+  .printQuestion p{margin:0 0 10px; font-size:.95rem;}
+  .constraints{font-family:var(--mono); font-size:.82rem; background:var(--accent-soft); border-radius:4px; padding:10px 14px; margin-bottom:10px;}
+  .constraints div{margin-bottom:4px;}
+
+  .options{display:grid; gap:6px; margin-top:4px;}
+  .opt{border:1px solid var(--line); border-radius:5px; padding:9px 12px; font-size:.9rem; background:#fdfcf9;}
+  .opt b{color:var(--accent); font-family:var(--mono); margin-right:6px;}
+  .opt.isCorrect{border-color:var(--accent); background:var(--accent-soft); font-weight:bold;}
+  .opt .whyFail{display:block; font-weight:normal; font-family:var(--mono); font-size:.78rem; color:var(--warn); margin-top:4px;}
+
+  .answerKey{margin-top:6px; padding:12px 16px; border-left:3px solid var(--accent); background:var(--accent-soft); font-size:.92rem;}
+
+  .rationaleWrap{margin-top:16px;}
+  .rationaleSvgHolder{margin-top:8px; overflow:visible;}
+  .rationaleSvgHolder svg{width:100% !important; height:auto !important; max-width:640px;}
+  .rationaleLoading{font-family:var(--mono); font-size:.75rem; color:#8a8578;}
+
+  .loadStatus{font-family:var(--mono); font-size:.8rem; color:#6b6558; padding:20px 0;}
+
+  @media print{
+    body{background:#fff; padding:0;}
+    .topMenu{display:none;}
+    .wrap{max-width:none;}
+    .printQuestion{box-shadow:none; margin:0; border:none; border-radius:0; padding:0.4in;}
+    h1, .subtitle{display:none;}
+  }
+</style>
+</head>
+<body>
+<nav class="topMenu" id="topMenu">
+  <div class="topMenuTabs" id="examTabs"></div>
+  <div class="topMenuRight">
+    <a class="topMenuLink" id="practiceLink" href="index.html">← Back to practice</a>
+    <button class="printBtn" id="printBtn" disabled>🖨️ Print / Save as PDF</button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <h1>Answer Key — Printable</h1>
+  <div class="subtitle" id="subtitle">loading…</div>
+  <div id="questionsRoot"></div>
+</div>
+
+<script>
+const EXAMS = [
+  { key: 'ccar-f', label: 'Claude Certified Architect - Foundations (CCAR-F)', file: 'questions.json' },
+  { key: 'ccar-p', label: 'Claude Certified Architect - Professional (CCAR-P)', file: 'ccar-p.json' },
+];
+
+const examTabs = document.getElementById('examTabs');
+const practiceLink = document.getElementById('practiceLink');
+const printBtn = document.getElementById('printBtn');
+const subtitle = document.getElementById('subtitle');
+const questionsRoot = document.getElementById('questionsRoot');
+
+let currentExam = EXAMS[0];
+
+function getCookie(name){
+  const prefix = name + '=';
+  const parts = document.cookie.split('; ');
+  for(const part of parts){
+    if(part.indexOf(prefix) === 0) return decodeURIComponent(part.slice(prefix.length));
+  }
+  return null;
+}
+
+function renderExamTabs(){
+  examTabs.innerHTML = EXAMS.map(e =>
+    '<button type="button" class="topMenuTab' + (e.key === currentExam.key ? ' active' : '') + '" data-exam="' + e.key + '">' + e.label + '</button>'
+  ).join('');
+  examTabs.querySelectorAll('.topMenuTab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.dataset.exam !== currentExam.key) loadExam(btn.dataset.exam);
+    });
+  });
+}
+
+function updateUrl(examKey){
+  const url = new URL(window.location.href);
+  url.searchParams.set('exam', examKey);
+  window.history.replaceState(null, '', url);
+}
+
+// ---- Mermaid rationale diagram (mirrors index.html) ----
+function waitForMermaid(){
+  return new Promise(resolve => {
+    if(window.mermaid) return resolve(window.mermaid);
+    window.addEventListener('mermaid-ready', () => resolve(window.mermaid), { once: true });
+  });
+}
+function mermaidEscape(text){
+  return String(text)
+    .replace(/<[^>]*>/g, '')
+    .replace(/"/g, "'")
+    .replace(/[\r\n]+/g, ' ')
+    .trim();
+}
+function truncateText(text, max){
+  return text.length > max ? text.slice(0, max - 1).trimEnd() + '…' : text;
+}
+const OPTION_EMOJI = { A: '🅰️', B: '🅱️', C: '🅲', D: '🅳' };
+const STEP_EMOJI = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣'];
+function splitSentences(text){
+  const matches = String(text).match(/[^.!?]+[.!?]+(\s+|$)/g);
+  const sentences = (matches || [text]).map(s => s.trim()).filter(Boolean);
+  return sentences.length ? sentences : [text];
+}
+function buildRationaleDiagram(q){
+  const correctOpt = q.options.find(o => o.key === q.correct);
+  const optEmoji = OPTION_EMOJI[correctOpt.key] || '🔹';
+  const lines = ['flowchart TD'];
+  lines.push('  Q{{"🧠 ' + mermaidEscape(truncateText(q.question, 90)) + '"}}');
+  lines.push('  class Q qnode');
+  lines.push('  Q --> ANS["✅ ' + optEmoji + ' ' + correctOpt.key + '. ' + mermaidEscape(truncateText(correctOpt.text, 100)) + '"]');
+  lines.push('  class ANS correctNode');
+
+  let prevId = 'ANS';
+  splitSentences(q.correctReason).forEach((sentence, i) => {
+    const nodeId = 'R' + i;
+    const emoji = STEP_EMOJI[i] || '💡';
+    lines.push('  ' + prevId + ' --> ' + nodeId + '["' + emoji + ' ' + mermaidEscape(truncateText(sentence, 140)) + '"]');
+    lines.push('  class ' + nodeId + ' stepNode');
+    prevId = nodeId;
+  });
+
+  lines.push('  classDef qnode fill:#fdfcf9,stroke:#2f5d50,stroke-width:2px,color:#2f5d50,font-weight:bold;');
+  lines.push('  classDef correctNode fill:#e4ece8,stroke:#2f5d50,stroke-width:2px,color:#1c2321,font-weight:bold;');
+  lines.push('  classDef stepNode fill:#fdfcf9,stroke:#2f5d50,stroke-width:1px,color:#1c2321;');
+  return lines.join('\n');
+}
+let rationaleRenderSeq = 0;
+function renderRationaleSvg(q){
+  rationaleRenderSeq += 1;
+  const renderId = 'printRationaleSvg-' + rationaleRenderSeq;
+  const diagramSrc = buildRationaleDiagram(q);
+  return waitForMermaid()
+    .then(mermaid => mermaid.render(renderId, diagramSrc))
+    .then(({ svg }) => svg)
+    .catch(err => {
+      console.error('Mermaid render failed for', q.id, err);
+      return '<div class="rationaleLoading">⚠️ diagram failed to render</div>';
+    });
+}
+
+function optionHtml(q, o){
+  const isCorrect = o.key === q.correct;
+  let html = '<div class="opt' + (isCorrect ? ' isCorrect' : '') + '">';
+  html += '<b>' + o.key + '.</b> ' + o.text;
+  if(isCorrect){
+    html += '<span class="whyFail">✅ Correct — ' + q.correctReason + '</span>';
+  } else if(q.whyFail && q.whyFail[o.key]){
+    html += '<span class="whyFail">✗ Why it fails — ' + q.whyFail[o.key] + '</span>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function questionHtml(q, idx, total){
+  let html = '<section class="printQuestion" id="pq-' + q.id + '">';
+  html += '<div class="pqMeta">Question ' + (idx + 1) + ' of ' + total + (q.created ? ' · Created ' + q.created : '') + '</div>';
+  html += '<div class="pqDomain">' + q.domain + '</div>';
+  html += '<h2>Scenario</h2><p>' + q.scenario + '</p>';
+  if(q.constraints && q.constraints.length){
+    html += '<div class="constraints">' + q.constraints.map(c => '<div><b>' + c.label + ':</b> ' + c.text + '</div>').join('') + '</div>';
+  }
+  html += '<h2>Question</h2><p>' + q.question + '</p>';
+  html += '<div class="options">' + q.options.map(o => optionHtml(q, o)).join('') + '</div>';
+  html += '<div class="rationaleWrap"><h2>🧭 Rationale map</h2><div class="rationaleSvgHolder" id="rationale-' + q.id + '"><div class="rationaleLoading">rendering diagram…</div></div></div>';
+  html += '</section>';
+  return html;
+}
+
+async function loadExam(examKey){
+  const exam = EXAMS.find(e => e.key === examKey) || EXAMS[0];
+  currentExam = exam;
+  updateUrl(exam.key);
+  renderExamTabs();
+  practiceLink.href = 'index.html?exam=' + encodeURIComponent(exam.key);
+  document.title = 'Print — ' + exam.label;
+  printBtn.disabled = true;
+  subtitle.textContent = exam.label + ' — loading questions…';
+  questionsRoot.innerHTML = '<div class="loadStatus">loading…</div>';
+
+  const res = await fetch(exam.file);
+  const questions = await res.json();
+
+  questionsRoot.innerHTML = questions.map((q, i) => questionHtml(q, i, questions.length)).join('');
+  subtitle.textContent = exam.label + ' — ' + questions.length + ' questions — rendering rationale diagrams (0/' + questions.length + ')…';
+
+  let rendered = 0;
+  await Promise.all(questions.map(q =>
+    renderRationaleSvg(q).then(svg => {
+      const holder = document.getElementById('rationale-' + q.id);
+      if(holder) holder.innerHTML = svg;
+      rendered += 1;
+      subtitle.textContent = exam.label + ' — ' + questions.length + ' questions — rendering rationale diagrams (' + rendered + '/' + questions.length + ')…';
+    })
+  ));
+
+  subtitle.textContent = exam.label + ' — ' + questions.length + ' questions — ready to print.';
+  printBtn.disabled = false;
+}
+
+printBtn.addEventListener('click', () => window.print());
+
+function init(){
+  const params = new URLSearchParams(window.location.search);
+  const requestedExam = params.get('exam') || getCookie('exam') || EXAMS[0].key;
+  loadExam(requestedExam);
+}
+init();
+</script>
+</body>
+</html>

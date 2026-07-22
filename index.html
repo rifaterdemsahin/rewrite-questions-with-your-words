@@ -39,6 +39,30 @@
     line-height:1.5;
   }
   .wrap{max-width:1000px; margin:0 auto;}
+
+  .topMenu{
+    position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:14px;
+    background:var(--panel); border-bottom:1px solid var(--line);
+    padding:10px 24px; margin:-24px -24px 24px;
+  }
+  .topMenuTabs{display:flex; gap:8px; flex-wrap:wrap;}
+  .topMenuTab{
+    font-family:var(--mono); font-size:.75rem; letter-spacing:.02em;
+    border:1px solid var(--line); color:#6b6558; background:transparent;
+    padding:7px 12px; border-radius:5px; cursor:pointer;
+  }
+  .topMenuTab:hover{border-color:var(--accent); color:var(--accent);}
+  .topMenuTab.active{border-color:var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:bold;}
+  .topMenuPrint{
+    margin-left:auto; font-family:var(--mono); font-size:.75rem;
+    color:var(--accent); text-decoration:none; border:1px solid var(--accent);
+    padding:7px 12px; border-radius:5px; white-space:nowrap;
+  }
+  .topMenuPrint:hover{background:var(--accent); color:#fff;}
+  @media (max-width:640px){
+    .topMenu{flex-wrap:wrap; padding:10px 16px;}
+    .topMenuPrint{margin-left:0;}
+  }
   h1{font-size:1.05rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0 0 4px;}
   .domain{font-family:var(--mono); font-size:.75rem; color:#6b6558; margin-bottom:4px;}
   .createdText{font-family:var(--mono); font-size:.7rem; color:#8a8578; margin-bottom:18px;}
@@ -64,8 +88,9 @@
   .opt.correct-reveal{border-color:var(--accent); border-style:dashed;}
 
   .picker{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+  .picker + .picker{margin-top:12px;}
   .picker label{font-family:var(--mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#6b6558;}
-  select#questionSelect{
+  .picker select{
     flex:1; min-width:240px; font-family:var(--mono); font-size:.85rem;
     padding:8px 10px; border:1px solid var(--line); border-radius:4px;
     background:#fdfcf9; color:var(--ink);
@@ -286,6 +311,11 @@
 </style>
 </head>
 <body>
+<nav class="topMenu" id="topMenu">
+  <div class="topMenuTabs" id="examTabs"></div>
+  <a class="topMenuPrint" id="printExamLink" href="print.html" target="_blank" title="Open a printable answer key for this exam">🖨️ Print exam</a>
+</nav>
+
 <button class="ghost breathingTopBtn" id="breathingBtn">🫁 Breathing Guide</button>
 
 <div class="breathingOverlay" id="breathingOverlay">
@@ -453,12 +483,20 @@ function setResult(qid, result, key){
   setCookie(qid + '_selected', key, 365);
 }
 
+const EXAMS = [
+  { key: 'ccar-f', label: 'Claude Certified Architect - Foundations (CCAR-F)', file: 'questions.json' },
+  { key: 'ccar-p', label: 'Claude Certified Architect - Professional (CCAR-P)', file: 'ccar-p.json' },
+];
+
 let questions = [];
 let current = null;
 let currentShuffled = [];
 let pickedKey = null;
 let wrongOnlyMode = false;
+let currentExam = EXAMS[0];
 
+const examTabs = document.getElementById('examTabs');
+const printExamLink = document.getElementById('printExamLink');
 const domainEl = document.getElementById('domain');
 const createdTextEl = document.getElementById('createdText');
 const questionSelect = document.getElementById('questionSelect');
@@ -1118,6 +1156,7 @@ function renderQuestion(){
 
 function updateUrlForQuestion(id){
   const url = new URL(window.location.href);
+  url.searchParams.set('exam', currentExam.key);
   url.searchParams.set('q', id);
   window.history.replaceState(null, '', url);
 }
@@ -1210,15 +1249,44 @@ breathingOverlay.addEventListener('click', (e) => {
   }
 });
 
-async function init(){
-  wbResizeCanvas();
-  const res = await fetch('questions.json');
+function renderExamTabs(){
+  examTabs.innerHTML = EXAMS.map(e =>
+    '<button type="button" class="topMenuTab' + (e.key === currentExam.key ? ' active' : '') + '" data-exam="' + e.key + '">' + e.label + '</button>'
+  ).join('');
+  examTabs.querySelectorAll('.topMenuTab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.dataset.exam !== currentExam.key) loadExam(btn.dataset.exam);
+    });
+  });
+}
+
+async function loadExam(examKey, requestedQuestionId){
+  const exam = EXAMS.find(e => e.key === examKey) || EXAMS[0];
+  currentExam = exam;
+  setCookie('exam', exam.key, 365);
+  document.title = exam.label + ' — Claude AI Architect';
+  renderExamTabs();
+  printExamLink.href = 'print.html?exam=' + encodeURIComponent(exam.key);
+
+  const res = await fetch(exam.file);
   questions = await res.json();
+  wrongOnlyMode = false;
+  wrongOnlyBtn.classList.remove('active');
+  wrongOnlyBtn.textContent = 'Focus: wrong only';
+  gapBox.classList.remove('shown');
+  gapBtn.textContent = 'Show gap analysis';
   buildQuestionSelect();
-  const requestedId = new URLSearchParams(window.location.search).get('q');
-  const startId = (requestedId && questions.some(q => q.id === requestedId)) ? requestedId : questions[0].id;
+  const startId = (requestedQuestionId && questions.some(q => q.id === requestedQuestionId)) ? requestedQuestionId : questions[0].id;
   loadQuestion(startId);
   pregenerateAllRationaleDiagrams();
+}
+
+async function init(){
+  wbResizeCanvas();
+  const params = new URLSearchParams(window.location.search);
+  const requestedExam = params.get('exam') || getCookie('exam') || EXAMS[0].key;
+  const requestedId = params.get('q');
+  await loadExam(requestedExam, requestedId);
 }
 init();
 </script>
