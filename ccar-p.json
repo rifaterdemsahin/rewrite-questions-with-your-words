@@ -1,0 +1,2762 @@
+[
+  {
+    "id": "sda-01",
+    "created": "2026-07-22",
+    "domain": "Solution Design & Architecture",
+    "scenario": "A retailer wants to automate responses to inbound supplier emails that arrive in a predictable format: acknowledge receipt, extract the PO number, look it up in an ERP, and reply with the current status. Volume is high and the task is well-bounded with a single happy path and a handful of known error branches.",
+    "constraints": [
+      {
+        "label": "Latency",
+        "text": "Median response under 3 seconds during business hours."
+      },
+      {
+        "label": "Cost",
+        "text": "Per-email cost must stay minimal at ~50k emails/day."
+      },
+      {
+        "label": "Predictability",
+        "text": "Behavior must be auditable and repeatable for compliance."
+      }
+    ],
+    "question": "Which architectural pattern best fits this workload?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A deterministic workflow (prompt chain) with fixed steps: classify, extract PO, call ERP tool, format reply."
+      },
+      {
+        "key": "B",
+        "text": "A fully autonomous agent with broad tool access that decides its own steps per email."
+      },
+      {
+        "key": "C",
+        "text": "A multi-agent system with a coordinator and four specialized subagents."
+      },
+      {
+        "key": "D",
+        "text": "A single monolithic prompt that receives the email and the entire ERP schema and improvises."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "The task is well-bounded with a known path and few branches, so a fixed workflow (prompt chaining) gives predictable, auditable, low-cost, low-latency execution. Agentic autonomy adds value only when the path is open-ended; here it would add cost and variance without benefit.",
+    "whyFail": {
+      "B": "Autonomous agency introduces non-determinism and extra model turns that hurt auditability, latency, and cost on a predictable high-volume task.",
+      "C": "Multi-agent orchestration is over-engineering for a linear, well-defined pipeline and multiplies token and coordination overhead.",
+      "D": "Dumping the full schema into one improvising prompt is neither auditable nor cost-efficient and invites inconsistent behavior."
+    }
+  },
+  {
+    "id": "sda-02",
+    "created": "2026-07-22",
+    "domain": "Solution Design & Architecture",
+    "scenario": "A consultancy is scoping an internal 'knowledge assistant' that answers questions over 400k policy documents. Stakeholders keep proposing features. The lead wants to anchor the design in measurable business value before committing to architecture.",
+    "constraints": [
+      {
+        "label": "Value pillar",
+        "text": "The primary justification is analyst time saved (productivity)."
+      },
+      {
+        "label": "Budget",
+        "text": "Fixed pilot budget; must show ROI in one quarter."
+      },
+      {
+        "label": "Scope",
+        "text": "Must resist scope creep during discovery."
+      }
+    ],
+    "question": "What is the most defensible first step in translating this into a solution design?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Identify the highest-frequency, highest-effort analyst tasks and design a narrow RAG solution that targets those, tying each capability to a value pillar."
+      },
+      {
+        "key": "B",
+        "text": "Build the broadest possible agent that can answer any question over all documents, then trim later."
+      },
+      {
+        "key": "C",
+        "text": "Select the largest available model first to guarantee quality, then design around its cost."
+      },
+      {
+        "key": "D",
+        "text": "Begin by drafting the system prompt and guardrails, deferring use-case selection until after the prototype works."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Anchoring to the highest-frequency, highest-effort tasks ties scope to a measurable productivity pillar and constrains the pilot to something that can show ROI in a quarter. Value-first, narrow scoping is the disciplined discovery move.",
+    "whyFail": {
+      "B": "Building broad-first guarantees scope creep and blows the fixed pilot budget before value is demonstrated.",
+      "C": "Model selection is a downstream trade-off decision; leading with the biggest model optimizes cost around an unproven use case.",
+      "D": "Writing prompts before selecting use cases inverts the design order and leaves value unquantified."
+    }
+  },
+  {
+    "id": "sda-03",
+    "created": "2026-07-22",
+    "domain": "Solution Design & Architecture",
+    "scenario": "A logistics company needs an 'augmented LLM' assistant for dispatchers. It should answer questions, and when asked, call a routing-optimization service and a weather API. Most interactions are pure Q&A; tool calls are the exception.",
+    "constraints": [
+      {
+        "label": "Interaction mix",
+        "text": "~85% pure reasoning/Q&A, ~15% tool-assisted."
+      },
+      {
+        "label": "Reliability",
+        "text": "Tool calls must be observable and bounded."
+      },
+      {
+        "label": "Simplicity",
+        "text": "Avoid unnecessary orchestration complexity."
+      }
+    ],
+    "question": "Which design most appropriately matches the augmented-LLM pattern here?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A single Claude instance with two well-scoped tools (routing, weather) invoked on demand, defaulting to direct reasoning otherwise."
+      },
+      {
+        "key": "B",
+        "text": "A coordinator agent that always routes every query through routing and weather subagents before answering."
+      },
+      {
+        "key": "C",
+        "text": "Two separate always-on agents, one per tool, that both respond to every dispatcher message."
+      },
+      {
+        "key": "D",
+        "text": "A workflow that forces a routing call and a weather call on every turn regardless of the question."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "The augmented-LLM pattern is a single model that reasons directly and reaches for scoped tools only when needed. With 85% pure Q&A, on-demand tool invocation keeps the system simple, observable, and cheap.",
+    "whyFail": {
+      "B": "Always routing through subagents wastes calls on the 85% that need no tools and adds orchestration complexity for no benefit.",
+      "C": "Two always-on agents responding to everything duplicates work and produces conflicting or redundant answers.",
+      "D": "Forcing both tool calls every turn is wasteful and defeats the point of on-demand augmentation."
+    }
+  },
+  {
+    "id": "sda-04",
+    "created": "2026-07-22",
+    "domain": "Solution Design & Architecture",
+    "scenario": "A bank is designing an end-to-end complaint-handling system: intake, classification, evidence retrieval, drafted resolution, and a feedback loop that captures whether the customer accepted the resolution. The team drew input->processing->output but omitted the feedback loop.",
+    "constraints": [
+      {
+        "label": "Continuous improvement",
+        "text": "The system must improve classification accuracy over time."
+      },
+      {
+        "label": "Auditability",
+        "text": "Outcomes must be traceable to inputs."
+      },
+      {
+        "label": "Governance",
+        "text": "Regulator expects evidence of monitoring."
+      }
+    ],
+    "question": "What is the most important addition to make this a complete end-to-end architecture?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A feedback loop that captures acceptance/rejection outcomes and routes them into evaluation datasets and monitoring."
+      },
+      {
+        "key": "B",
+        "text": "A second model that re-reads every output for tone before sending."
+      },
+      {
+        "key": "C",
+        "text": "A larger context window so more of each complaint fits in one prompt."
+      },
+      {
+        "key": "D",
+        "text": "A caching layer to reduce the cost of repeated classifications."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "A closed feedback loop capturing real outcomes is what turns a pipeline into a system that improves and satisfies the regulator's monitoring expectation. It also gives outcome-to-input traceability.",
+    "whyFail": {
+      "B": "A tone re-reader is a quality nicety but does not create the continuous-improvement or monitoring loop the design lacks.",
+      "C": "Context size addresses fitting input, not the missing feedback/monitoring capability.",
+      "D": "Caching cuts cost but contributes nothing to improvement, traceability, or governance monitoring."
+    }
+  },
+  {
+    "id": "sda-05",
+    "created": "2026-07-22",
+    "domain": "Solution Design & Architecture",
+    "scenario": "A media firm wants a research assistant that produces multi-source briefings. Early tests with a single agent show it conflates sources and loses attribution when a topic spans many subtopics. Leadership asks whether to decompose.",
+    "constraints": [
+      {
+        "label": "Coverage",
+        "text": "Briefings must cover all major subtopics of a broad query."
+      },
+      {
+        "label": "Attribution",
+        "text": "Every claim must map to a source."
+      },
+      {
+        "label": "Controllability",
+        "text": "Failures must be isolatable to a stage."
+      }
+    ],
+    "question": "Which decomposition strategy best addresses the observed failure?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A coordinator that partitions the topic into distinct subtopics across search/analysis subagents, with each returning structured claim-source mappings for synthesis."
+      },
+      {
+        "key": "B",
+        "text": "A single larger-context agent that ingests every source at once and writes the briefing in one pass."
+      },
+      {
+        "key": "C",
+        "text": "A random split of sources across three identical agents that each write a full briefing, merged by concatenation."
+      },
+      {
+        "key": "D",
+        "text": "Sequential prompting where one agent rewrites the previous agent's prose repeatedly until it looks polished."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Partitioning distinct subtopics across subagents minimizes duplication and gaps, while requiring structured claim-source mappings preserves attribution through synthesis and isolates failures to a stage.",
+    "whyFail": {
+      "B": "One big-context pass reproduces the exact conflation/attribution failure and offers no stage isolation.",
+      "C": "Random splits with concatenation cause overlap, gaps, and no coherent attribution.",
+      "D": "Iterative prose rewriting degrades source fidelity and does nothing for coverage or isolation."
+    }
+  },
+  {
+    "id": "sda-06",
+    "created": "2026-07-22",
+    "domain": "Solution Design & Architecture",
+    "scenario": "A SaaS vendor must choose between a workflow and an agentic design for a 'contract review' feature. Contracts vary widely; the needed steps depend on clauses discovered mid-review, and reviewers cannot predict the path in advance.",
+    "constraints": [
+      {
+        "label": "Adaptivity",
+        "text": "Steps depend on what is found during review."
+      },
+      {
+        "label": "Depth",
+        "text": "Must follow cross-references discovered dynamically."
+      },
+      {
+        "label": "Quality",
+        "text": "Missing a discovered dependency is a serious defect."
+      }
+    ],
+    "question": "Which pattern is the better fit and why?",
+    "options": [
+      {
+        "key": "A",
+        "text": "An agentic design that dynamically decomposes work based on intermediate findings and follows discovered cross-references."
+      },
+      {
+        "key": "B",
+        "text": "A fixed workflow with a predetermined sequence of clause checks in a set order."
+      },
+      {
+        "key": "C",
+        "text": "A single zero-shot prompt asking the model to 'review the contract thoroughly.'"
+      },
+      {
+        "key": "D",
+        "text": "A batch job that reviews all contracts overnight with no branching logic."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "When the required steps genuinely depend on what is discovered mid-task and cross-references must be followed dynamically, adaptive agentic decomposition fits better than any fixed sequence.",
+    "whyFail": {
+      "B": "A fixed workflow cannot adapt to clauses and dependencies discovered during the review, risking the serious 'missed dependency' defect.",
+      "C": "A single vague prompt gives no structured investigation and will miss discovered cross-references.",
+      "D": "Batch timing is orthogonal; the issue is dynamic branching, which a no-branch job cannot provide."
+    }
+  },
+  {
+    "id": "sda-07",
+    "created": "2026-07-22",
+    "domain": "Solution Design & Architecture",
+    "scenario": "An insurer's leadership frames a project purely as 'add AI to claims.' The architect must reframe it against business value pillars to prioritize which subsystem to build first, given three candidate subsystems: fraud triage (risk reduction), FNOL intake automation (efficiency), and adjuster copilot (productivity).",
+    "constraints": [
+      {
+        "label": "Prioritization",
+        "text": "Only one subsystem can be funded first."
+      },
+      {
+        "label": "Measurability",
+        "text": "The first build must have a clear, attributable metric."
+      },
+      {
+        "label": "Executive framing",
+        "text": "Must be defensible to a non-technical board."
+      }
+    ],
+    "question": "What is the soundest basis for choosing which to build first?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Map each subsystem to a value pillar and a quantifiable baseline metric, then pick the one with the largest measurable value per unit of delivery risk."
+      },
+      {
+        "key": "B",
+        "text": "Build the technically most interesting subsystem first to attract engineering talent."
+      },
+      {
+        "key": "C",
+        "text": "Build all three in parallel to hedge and decide later which to keep."
+      },
+      {
+        "key": "D",
+        "text": "Choose the one requiring the largest model, since capability correlates with value."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Tying each candidate to a value pillar and a quantifiable baseline lets you select the highest measurable value against delivery risk, which is exactly the defensible, board-legible basis for sequencing.",
+    "whyFail": {
+      "B": "Engineering interest is not a business-value criterion and can misallocate the single available slot.",
+      "C": "Parallel-building all three violates the single-funding constraint and dilutes measurability.",
+      "D": "Model size is a downstream trade-off, not a proxy for business value."
+    }
+  },
+  {
+    "id": "sda-08",
+    "created": "2026-07-22",
+    "domain": "Solution Design & Architecture",
+    "scenario": "A healthcare startup designs a triage assistant. The architect proposes a multi-agent system: one agent gathers symptoms, one retrieves guidelines, one drafts advice. A reviewer warns that inter-agent communication is happening peer-to-peer with no central control.",
+    "constraints": [
+      {
+        "label": "Observability",
+        "text": "Every decision must be traceable centrally."
+      },
+      {
+        "label": "Error handling",
+        "text": "Failures must be caught and routed consistently."
+      },
+      {
+        "label": "Safety",
+        "text": "Clinical advice must pass a single controlled gate."
+      }
+    ],
+    "question": "Which orchestration change best addresses the reviewer's concern?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Adopt a hub-and-spoke coordinator that mediates all inter-agent communication, error handling, and the final safety gate."
+      },
+      {
+        "key": "B",
+        "text": "Let each agent call the others directly but add more logging to each agent."
+      },
+      {
+        "key": "C",
+        "text": "Merge all three agents into one prompt to eliminate communication entirely."
+      },
+      {
+        "key": "D",
+        "text": "Add a fourth peer agent whose job is to watch the other three."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "A hub-and-spoke coordinator centralizes communication, error handling, and the single safety gate, giving the traceability and controlled information flow the reviewer requires.",
+    "whyFail": {
+      "B": "Peer-to-peer calls plus more logging still lack a central control point and consistent error routing.",
+      "C": "Merging into one prompt loses the specialization and makes the single safety gate harder to reason about, not easier.",
+      "D": "A watcher peer does not centralize control; it adds another uncoordinated actor."
+    }
+  },
+  {
+    "id": "sda-09",
+    "created": "2026-07-22",
+    "domain": "Solution Design & Architecture",
+    "scenario": "A firm needs an assistant that answers 'how many' and 'what is the trend' questions over a structured warehouse plus 'why did X happen' questions over unstructured incident reports. A single retrieval approach performs poorly on one of the two.",
+    "constraints": [
+      {
+        "label": "Query shapes",
+        "text": "Two distinct query classes: analytical/aggregate and explanatory/semantic."
+      },
+      {
+        "label": "Accuracy",
+        "text": "Each class must be answered by the mechanism suited to it."
+      },
+      {
+        "label": "Maintainability",
+        "text": "Avoid one brittle mechanism forced to do both."
+      }
+    ],
+    "question": "What is the best solution-design response?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Route by query class: send aggregate questions to a text-to-SQL/structured path and explanatory questions to a semantic RAG path."
+      },
+      {
+        "key": "B",
+        "text": "Force all questions through semantic vector search over both data sources."
+      },
+      {
+        "key": "C",
+        "text": "Force all questions through SQL generation, embedding the incident reports as rows."
+      },
+      {
+        "key": "D",
+        "text": "Concatenate the warehouse and the reports into one giant prompt every time."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Different query shapes over different data shapes call for different mechanisms; routing aggregate queries to structured querying and explanatory queries to semantic retrieval matches each class to the tool that answers it accurately.",
+    "whyFail": {
+      "B": "Semantic search is poor at exact aggregates and trends over structured data.",
+      "C": "SQL generation is poor at open explanatory reasoning over unstructured narratives.",
+      "D": "One giant prompt is neither accurate nor maintainable and ignores the data-shape mismatch."
+    }
+  },
+  {
+    "id": "sda-10",
+    "created": "2026-07-22",
+    "domain": "Solution Design & Architecture",
+    "scenario": "An architect is asked to design a system where cost and latency SLAs are explicit business commitments in a customer contract, not just engineering preferences. The proposed design uses the largest model for every step including trivial formatting.",
+    "constraints": [
+      {
+        "label": "SLA",
+        "text": "Contractual p95 latency of 4s and a per-transaction cost ceiling."
+      },
+      {
+        "label": "Quality floor",
+        "text": "Complex reasoning steps must still meet an accuracy bar."
+      },
+      {
+        "label": "Contractual risk",
+        "text": "Breaching SLA has financial penalties."
+      }
+    ],
+    "question": "How should the architecture be revised to align with the business commitments?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Tier the models: use a small/fast model for trivial steps (formatting, routing) and reserve a larger model only for the steps that need deep reasoning."
+      },
+      {
+        "key": "B",
+        "text": "Keep the largest model everywhere and negotiate the SLA away."
+      },
+      {
+        "key": "C",
+        "text": "Use the smallest model everywhere to guarantee cost and latency regardless of quality."
+      },
+      {
+        "key": "D",
+        "text": "Remove the accuracy bar so the fastest configuration always passes."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Model tiering assigns cheap/fast models to trivial steps and reserves expensive reasoning for where it is needed, meeting the contractual cost and latency SLAs while preserving the accuracy floor on hard steps.",
+    "whyFail": {
+      "B": "Ignoring the SLA is not an engineering solution and exposes the business to penalties.",
+      "C": "Smallest-everywhere breaches the quality floor on complex reasoning steps.",
+      "D": "Dropping the accuracy bar violates the stated quality requirement to game the metric."
+    }
+  },
+  {
+    "id": "mpc-01",
+    "created": "2026-07-22",
+    "domain": "Claude Models, Prompting & Context Engineering",
+    "scenario": "An application sends an identical 12,000-token system prompt plus a policy manual on every request, followed by a short varying user question. Both latency and per-request cost are flagged as problems.",
+    "constraints": [
+      {
+        "label": "Static prefix",
+        "text": "The 12k-token prefix is identical across requests."
+      },
+      {
+        "label": "Latency",
+        "text": "Time-to-first-token must drop."
+      },
+      {
+        "label": "Cost",
+        "text": "Per-request cost must drop without losing policy content."
+      }
+    ],
+    "question": "Which optimization most directly addresses both latency and cost?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Place the static system prompt and policy first, before dynamic content, and enable prompt caching so the repeated prefix is reused."
+      },
+      {
+        "key": "B",
+        "text": "Truncate the policy manual to its first 1,000 tokens."
+      },
+      {
+        "key": "C",
+        "text": "Switch to the smallest available model regardless of task fit."
+      },
+      {
+        "key": "D",
+        "text": "Move the policy manual into a few-shot example block at the end of the prompt."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Ordering the stable prefix first and enabling prompt caching reuses the repeated tokens, cutting both time-to-first-token and per-request cost without discarding required policy content.",
+    "whyFail": {
+      "B": "Truncation drops needed policy content and risks incorrect answers.",
+      "C": "Blindly downsizing risks quality on a policy-sensitive task and does not exploit the reusable prefix.",
+      "D": "Relocating the policy to the end prevents a cacheable stable prefix and does not reduce cost."
+    }
+  },
+  {
+    "id": "mpc-02",
+    "created": "2026-07-22",
+    "domain": "Claude Models, Prompting & Context Engineering",
+    "scenario": "A team must select a Claude model for a pipeline with two very different stages: (1) high-volume intent classification of short messages, and (2) low-volume, deep multi-document legal analysis. They currently use one model for both.",
+    "constraints": [
+      {
+        "label": "Stage 1",
+        "text": "Millions of short classifications daily; cost-sensitive."
+      },
+      {
+        "label": "Stage 2",
+        "text": "Hundreds of complex analyses daily; accuracy-critical."
+      },
+      {
+        "label": "Trade-off",
+        "text": "Match capability to task rather than one-size-fits-all."
+      }
+    ],
+    "question": "What is the best model-selection strategy?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use a fast, economical model for high-volume classification and a more capable model for the deep legal analysis."
+      },
+      {
+        "key": "B",
+        "text": "Use the most capable model for both stages to be safe."
+      },
+      {
+        "key": "C",
+        "text": "Use the cheapest model for both stages to control cost."
+      },
+      {
+        "key": "D",
+        "text": "Use one mid-tier model for both and disable reasoning to save tokens."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Selecting per-stage matches capability to need: an economical model absorbs the cheap high-volume classification while a capable model handles the accuracy-critical legal work, optimizing the overall cost/quality trade-off.",
+    "whyFail": {
+      "B": "Most-capable-everywhere wastes money on millions of trivial classifications.",
+      "C": "Cheapest-everywhere risks the accuracy-critical legal analysis.",
+      "D": "A single mid-tier compromise underserves both the cost-sensitive and accuracy-critical ends."
+    }
+  },
+  {
+    "id": "mpc-03",
+    "created": "2026-07-22",
+    "domain": "Claude Models, Prompting & Context Engineering",
+    "scenario": "A prompt asks the model to solve multi-step quantitative reasoning problems and go straight to a final number. Accuracy on multi-step items is poor, with arithmetic slips. The team wants a prompting fix before changing models.",
+    "constraints": [
+      {
+        "label": "Task",
+        "text": "Multi-step quantitative reasoning."
+      },
+      {
+        "label": "Failure",
+        "text": "Errors accumulate when jumping to the answer."
+      },
+      {
+        "label": "Constraint",
+        "text": "Prefer a prompt-level fix first."
+      }
+    ],
+    "question": "Which prompt-engineering technique most directly targets this failure?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Elicit chain-of-thought so the model works through intermediate steps before giving the final answer."
+      },
+      {
+        "key": "B",
+        "text": "Add 'be accurate and careful' to the system prompt."
+      },
+      {
+        "key": "C",
+        "text": "Lower the temperature to 0 and change nothing else."
+      },
+      {
+        "key": "D",
+        "text": "Ask for the answer twice and keep the first response."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Chain-of-thought lets the model externalize intermediate steps, which is the standard, direct remedy for accumulated errors in multi-step reasoning before resorting to a model change.",
+    "whyFail": {
+      "B": "Vague exhortations like 'be careful' do not create the intermediate-step structure that fixes multi-step reasoning.",
+      "C": "Temperature alone does not add reasoning structure to multi-step problems.",
+      "D": "Asking twice and keeping the first adds no reasoning and no selection benefit."
+    }
+  },
+  {
+    "id": "mpc-04",
+    "created": "2026-07-22",
+    "domain": "Claude Models, Prompting & Context Engineering",
+    "scenario": "A support bot must never reveal internal pricing logic, must refuse out-of-scope legal questions, and must keep a consistent brand voice. The current single-paragraph prompt mixes all rules together and behavior is inconsistent.",
+    "constraints": [
+      {
+        "label": "Guardrails",
+        "text": "Hard rules (no internal pricing, refuse legal) must hold reliably."
+      },
+      {
+        "label": "Voice",
+        "text": "Consistent tone across turns."
+      },
+      {
+        "label": "Maintainability",
+        "text": "Rules should be individually editable."
+      }
+    ],
+    "question": "What is the most effective prompt/context-engineering improvement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Restructure into a clear system prompt with explicit, separated guardrail rules and voice guidance, using unambiguous 'must/never' criteria for each rule."
+      },
+      {
+        "key": "B",
+        "text": "Add more polite language so the model is less likely to misbehave."
+      },
+      {
+        "key": "C",
+        "text": "Move all rules into a single run-on sentence to save tokens."
+      },
+      {
+        "key": "D",
+        "text": "Rely on post-hoc string filtering of outputs instead of prompt structure."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Explicit, separated 'must/never' guardrails plus distinct voice guidance in a well-structured system prompt make each rule individually reliable and editable, which is the correct prompt-engineering response to conflated, inconsistent rules.",
+    "whyFail": {
+      "B": "Politeness does not make hard guardrails reliable or maintainable.",
+      "C": "A run-on sentence worsens ambiguity and reliability, the opposite of what is needed.",
+      "D": "Output filtering is a compensating control, not a fix for a poorly structured prompt, and cannot enforce voice consistency."
+    }
+  },
+  {
+    "id": "mpc-05",
+    "created": "2026-07-22",
+    "domain": "Claude Models, Prompting & Context Engineering",
+    "scenario": "A document assistant repeatedly reuses several stable instruction blocks (extraction rules, formatting rules, tone rules) recombined per task type. Copy-pasting them into each prompt has led to drift where blocks diverge across prompts.",
+    "constraints": [
+      {
+        "label": "Reuse",
+        "text": "The same instruction blocks recur across many prompt variants."
+      },
+      {
+        "label": "Consistency",
+        "text": "Blocks must stay identical wherever used."
+      },
+      {
+        "label": "Scale",
+        "text": "Dozens of task-specific prompts."
+      }
+    ],
+    "question": "Which prompt-reuse strategy best prevents drift?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Factor the stable blocks into modular, centrally-maintained prompt components (and reusable Skills) composed per task, rather than copy-pasting."
+      },
+      {
+        "key": "B",
+        "text": "Keep copy-pasting but add a reminder comment at the top of each prompt."
+      },
+      {
+        "key": "C",
+        "text": "Merge all task prompts into one giant prompt to avoid duplication."
+      },
+      {
+        "key": "D",
+        "text": "Regenerate each prompt from scratch with the model each time it is needed."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Modular, centrally-maintained components (and Skills) composed per task give a single source of truth for each block, eliminating the divergence that copy-pasting causes at scale.",
+    "whyFail": {
+      "B": "A reminder comment does not stop the underlying divergence of duplicated copies.",
+      "C": "One giant prompt sacrifices task specificity and becomes unmaintainable.",
+      "D": "Regenerating prompts each time introduces fresh non-determinism and more drift."
+    }
+  },
+  {
+    "id": "mpc-06",
+    "created": "2026-07-22",
+    "domain": "Claude Models, Prompting & Context Engineering",
+    "scenario": "A long-running assistant accumulates tool outputs (each order lookup returns 40+ fields, only ~5 relevant) across a lengthy conversation. Token usage balloons and later answers start missing details buried mid-context.",
+    "constraints": [
+      {
+        "label": "Token budget",
+        "text": "Verbose tool results dominate the window."
+      },
+      {
+        "label": "Position effect",
+        "text": "Middle-of-context details get lost."
+      },
+      {
+        "label": "Fidelity",
+        "text": "Key transactional facts must persist."
+      }
+    ],
+    "question": "Which combination best manages context here?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Trim tool outputs to the relevant fields before they accumulate, and keep a persistent 'case facts' block of key values placed prominently in the prompt."
+      },
+      {
+        "key": "B",
+        "text": "Keep all 40+ fields per lookup to be safe and rely on a larger model."
+      },
+      {
+        "key": "C",
+        "text": "Summarize the entire conversation into vague prose each turn, including the numbers."
+      },
+      {
+        "key": "D",
+        "text": "Move all details to the exact middle of the prompt to balance position effects."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Trimming verbose tool outputs to relevant fields controls token growth, and extracting key transactional facts into a persistent, prominently placed block counters the lost-in-the-middle effect and preserves fidelity.",
+    "whyFail": {
+      "B": "Keeping every field accelerates token bloat and worsens the position problem regardless of model size.",
+      "C": "Vague summarization is precisely what loses exact numbers, dates, and statuses.",
+      "D": "The middle is the worst position for critical facts, not a balanced one."
+    }
+  },
+  {
+    "id": "mpc-07",
+    "created": "2026-07-22",
+    "domain": "Claude Models, Prompting & Context Engineering",
+    "scenario": "For an extraction task, a team writes a detailed prose description of the desired output but gets inconsistent formatting across documents with varied layouts (inline citations vs bibliographies, tables vs narrative).",
+    "constraints": [
+      {
+        "label": "Variety",
+        "text": "Source documents have structurally different layouts."
+      },
+      {
+        "label": "Consistency",
+        "text": "Output format must be uniform."
+      },
+      {
+        "label": "Prose limits",
+        "text": "Long prose instructions are interpreted inconsistently."
+      }
+    ],
+    "question": "Which technique most reliably improves consistency across the varied inputs?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Add a few targeted few-shot examples that demonstrate correct extraction from each varied layout and the exact output format."
+      },
+      {
+        "key": "B",
+        "text": "Rewrite the prose description to be even longer and more detailed."
+      },
+      {
+        "key": "C",
+        "text": "Raise max_tokens so the model has room to be consistent."
+      },
+      {
+        "key": "D",
+        "text": "Ask the model to 'format consistently' at the end of the prompt."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Few-shot examples demonstrating each layout and the target format are the most effective way to achieve consistent, generalizable output when prose alone is interpreted inconsistently.",
+    "whyFail": {
+      "B": "More prose tends to compound inconsistency rather than resolve it.",
+      "C": "Token headroom does not teach format; it just permits longer output.",
+      "D": "A vague instruction to 'format consistently' provides no concrete pattern to follow."
+    }
+  },
+  {
+    "id": "mpc-08",
+    "created": "2026-07-22",
+    "domain": "Claude Models, Prompting & Context Engineering",
+    "scenario": "A team is deciding how to guide model behavior for a task that is mostly stable but has a few genuinely ambiguous edge cases (e.g., which of two categories an unusual record belongs to). Zero-shot performance is fine on common cases but erratic on the ambiguous ones.",
+    "constraints": [
+      {
+        "label": "Common cases",
+        "text": "Zero-shot is already adequate."
+      },
+      {
+        "label": "Edge cases",
+        "text": "Ambiguous records are handled inconsistently."
+      },
+      {
+        "label": "Efficiency",
+        "text": "Do not bloat the prompt unnecessarily."
+      }
+    ],
+    "question": "What is the most proportionate prompting improvement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Add a small set of few-shot examples specifically for the ambiguous edge cases, showing the reasoning for choosing one category over the plausible alternative."
+      },
+      {
+        "key": "B",
+        "text": "Convert the entire task to few-shot with dozens of examples covering every case."
+      },
+      {
+        "key": "C",
+        "text": "Switch to chain-of-thought on every request, common cases included."
+      },
+      {
+        "key": "D",
+        "text": "Remove all instructions and let the model infer categories freely."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Targeted few-shot examples aimed at the ambiguous cases (with reasoning) fix the actual failure while keeping the prompt lean, since common cases already work zero-shot.",
+    "whyFail": {
+      "B": "Dozens of examples across all cases is disproportionate token overhead for a problem localized to edge cases.",
+      "C": "Forcing CoT everywhere adds latency/cost to the already-working common path.",
+      "D": "Removing instructions increases variance and abandons the working common-case behavior."
+    }
+  },
+  {
+    "id": "int-01",
+    "created": "2026-07-22",
+    "domain": "Integration",
+    "scenario": "A customer-support agent is configured with tools to read tickets, draft replies, issue refunds, and delete user accounts. The support role only ever needs to read tickets and draft replies. A security review flags excessive capability.",
+    "constraints": [
+      {
+        "label": "Least privilege",
+        "text": "The role should hold only the capabilities it needs."
+      },
+      {
+        "label": "Blast radius",
+        "text": "High-impact actions (refund, delete) must not be reachable by this role."
+      },
+      {
+        "label": "Auditability",
+        "text": "Simplicity preferred over compensating monitoring."
+      }
+    ],
+    "question": "Applying least-privilege principles, which change best reduces risk?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Remove the refund and delete tools from this agent's configuration entirely."
+      },
+      {
+        "key": "B",
+        "text": "Keep all tools but add a confirmation prompt before refunds and deletions."
+      },
+      {
+        "key": "C",
+        "text": "Add logging to the refund and delete tools so misuse can be audited later."
+      },
+      {
+        "key": "D",
+        "text": "Replace the agent with a larger model that follows instructions more reliably."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Least privilege means removing capabilities the role does not require, which eliminates the attack surface rather than monitoring or guarding it.",
+    "whyFail": {
+      "B": "A confirmation prompt is a compensating control that still leaves the dangerous capability configured and reachable.",
+      "C": "Logging is detective, not preventive; the unnecessary privilege still exists.",
+      "D": "Model size is unrelated to authorization scope and does not remove the excess capability."
+    }
+  },
+  {
+    "id": "int-02",
+    "created": "2026-07-22",
+    "domain": "Integration",
+    "scenario": "An agent has grown to 18 tools with overlapping purposes. Tool-selection reliability has dropped noticeably: it frequently picks the wrong tool among near-duplicates like analyze_content and analyze_document.",
+    "constraints": [
+      {
+        "label": "Selection reliability",
+        "text": "Wrong-tool selection has increased with tool count."
+      },
+      {
+        "label": "Overlap",
+        "text": "Several tools have near-identical descriptions."
+      },
+      {
+        "label": "Capability bloat",
+        "text": "Decision complexity is too high."
+      }
+    ],
+    "question": "What is the most effective remediation?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Reduce and disambiguate the tool set: remove overlap, rename/clarify descriptions, and scope tools to roles so the agent chooses among a small, distinct set."
+      },
+      {
+        "key": "B",
+        "text": "Keep all 18 tools and add a longer system prompt telling the model to choose carefully."
+      },
+      {
+        "key": "C",
+        "text": "Add an 'auto' meta-tool that picks a tool internally."
+      },
+      {
+        "key": "D",
+        "text": "Switch tool_choice to 'any' so the model is forced to call some tool each turn."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Capability bloat degrades selection; cutting overlap, clarifying descriptions, and scoping tools to a small distinct set directly restores reliable selection.",
+    "whyFail": {
+      "B": "More prose cannot compensate for 18 overlapping tools; the decision space is still too large.",
+      "C": "A meta-tool hides the same ambiguity behind another layer without resolving the overlap.",
+      "D": "Forcing any tool call does not fix which tool gets chosen among the duplicates."
+    }
+  },
+  {
+    "id": "int-03",
+    "created": "2026-07-22",
+    "domain": "Integration",
+    "scenario": "A team integrating Claude with an internal ticketing backend debates the connection mechanism. The backend is a long-lived service that many agents and Claude Code users will reuse, and they want tools/resources discoverable and standardized across teams.",
+    "constraints": [
+      {
+        "label": "Reuse",
+        "text": "Many agents/users share the same backend."
+      },
+      {
+        "label": "Standardization",
+        "text": "Tools and resources should be discoverable consistently."
+      },
+      {
+        "label": "Maintenance",
+        "text": "Avoid bespoke per-consumer glue code."
+      }
+    ],
+    "question": "Which integration mechanism best fits?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Expose the backend via an MCP server so its tools and resources are standardized and discoverable across agents and Claude Code."
+      },
+      {
+        "key": "B",
+        "text": "Have each consumer shell out to the backend's CLI with custom parsing per team."
+      },
+      {
+        "key": "C",
+        "text": "Hard-code direct HTTP calls inside each agent's prompt logic."
+      },
+      {
+        "key": "D",
+        "text": "Build a separate one-off API wrapper for every consuming application."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "MCP is designed for exactly this: a standardized, discoverable tool/resource interface to a shared backend consumed by many agents and Claude Code clients, avoiding bespoke glue.",
+    "whyFail": {
+      "B": "Per-team CLI parsing is bespoke glue that is inconsistent and hard to maintain across many consumers.",
+      "C": "Prompt-embedded HTTP calls are brittle, non-standard, and not discoverable.",
+      "D": "One-off wrappers per app defeat standardization and multiply maintenance."
+    }
+  },
+  {
+    "id": "int-04",
+    "created": "2026-07-22",
+    "domain": "Integration",
+    "scenario": "A RAG system over long technical manuals splits documents into fixed 2,000-token chunks with no overlap and no structure awareness. Users complain answers cut off mid-procedure and miss steps that straddle chunk boundaries.",
+    "constraints": [
+      {
+        "label": "Boundary loss",
+        "text": "Procedures split across chunks lose steps."
+      },
+      {
+        "label": "Structure",
+        "text": "Manuals have clear section/procedure boundaries."
+      },
+      {
+        "label": "Recall",
+        "text": "Retrieved context must contain complete procedures."
+      }
+    ],
+    "question": "Which chunking change best addresses the boundary problem?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use structure-aware chunking aligned to section/procedure boundaries with modest overlap, so complete procedures stay intact in a chunk."
+      },
+      {
+        "key": "B",
+        "text": "Halve the chunk size to 1,000 tokens with no overlap."
+      },
+      {
+        "key": "C",
+        "text": "Double the chunk size to 4,000 tokens with no overlap."
+      },
+      {
+        "key": "D",
+        "text": "Embed each sentence as its own chunk to maximize granularity."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Aligning chunk boundaries to document structure and adding overlap keeps whole procedures within retrievable units, directly fixing the straddling-boundary step loss.",
+    "whyFail": {
+      "B": "Smaller no-overlap chunks split procedures even more finely, worsening the boundary loss.",
+      "C": "Bigger no-overlap chunks still cut arbitrarily at boundaries and reduce retrieval precision.",
+      "D": "Sentence-level chunks fragment procedures and destroy the local context needed to answer."
+    }
+  },
+  {
+    "id": "int-05",
+    "created": "2026-07-22",
+    "domain": "Integration",
+    "scenario": "A support agent integrates three MCP tools that each return timestamps differently (Unix epoch, ISO 8601, and a numeric status code) plus inconsistent field names. The model frequently mishandles these heterogeneous formats when reasoning.",
+    "constraints": [
+      {
+        "label": "Heterogeneity",
+        "text": "Tools return inconsistent formats/units."
+      },
+      {
+        "label": "Determinism",
+        "text": "Normalization must be guaranteed, not hoped for."
+      },
+      {
+        "label": "Separation",
+        "text": "Keep the model focused on reasoning, not format wrangling."
+      }
+    ],
+    "question": "What is the most robust integration fix?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Add a PostToolUse hook that normalizes heterogeneous tool results into a consistent schema before the model processes them."
+      },
+      {
+        "key": "B",
+        "text": "Instruct the model in the system prompt to convert all formats itself on every turn."
+      },
+      {
+        "key": "C",
+        "text": "Ask users to specify the timestamp format they expect in each message."
+      },
+      {
+        "key": "D",
+        "text": "Switch to a larger model that is better at parsing mixed formats."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "A PostToolUse hook normalizes heterogeneous results deterministically before the model sees them, guaranteeing consistency and keeping the model on reasoning rather than fragile format conversion.",
+    "whyFail": {
+      "B": "Prompt-based conversion is probabilistic and will intermittently fail on edge formats.",
+      "C": "Pushing format handling onto users is unreliable and a poor experience.",
+      "D": "A bigger model still parses probabilistically and does not guarantee normalization."
+    }
+  },
+  {
+    "id": "int-06",
+    "created": "2026-07-22",
+    "domain": "Integration",
+    "scenario": "An architect must justify a configuration decision: a fraud-check step can call a fast approximate model (200ms, 92% accuracy) or a slower thorough one (1.5s, 98% accuracy). The step gates whether a transaction proceeds and false negatives are costly.",
+    "constraints": [
+      {
+        "label": "Accuracy-latency",
+        "text": "Two options trade speed against accuracy."
+      },
+      {
+        "label": "Cost of error",
+        "text": "Missed fraud (false negative) is very expensive."
+      },
+      {
+        "label": "SLA",
+        "text": "The overall flow has some latency headroom at this step."
+      }
+    ],
+    "question": "Which justification-driven configuration is soundest?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use the slower, more accurate model at this fraud gate because the cost of false negatives dominates the modest added latency the flow can absorb."
+      },
+      {
+        "key": "B",
+        "text": "Always use the fastest model everywhere to minimize latency regardless of the error cost."
+      },
+      {
+        "key": "C",
+        "text": "Alternate between the two models randomly to balance the metrics."
+      },
+      {
+        "key": "D",
+        "text": "Use the fast model but retry three times to reach higher accuracy."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "When false negatives are very costly and the flow can absorb the extra latency, justifying the slower/more accurate model at the gate is the correct accuracy-latency trade-off.",
+    "whyFail": {
+      "B": "Fastest-everywhere ignores the expensive false-negative cost that dominates this decision.",
+      "C": "Random alternation yields unpredictable accuracy on a safety-critical gate.",
+      "D": "Retrying a fast approximate model does not reliably reach the accuracy of the thorough model and adds latency anyway."
+    }
+  },
+  {
+    "id": "int-07",
+    "created": "2026-07-22",
+    "domain": "Integration",
+    "scenario": "At scale (thousands of agent runs/hour across many tools and subagents), the team cannot tell where failures or latency originate. Errors surface only as generic end-user messages, and there is no request-level correlation.",
+    "constraints": [
+      {
+        "label": "Scale",
+        "text": "Thousands of runs/hour, many tools/subagents."
+      },
+      {
+        "label": "Diagnosability",
+        "text": "Must localize failures and latency to a component."
+      },
+      {
+        "label": "Correlation",
+        "text": "Need to trace a single request end-to-end."
+      }
+    ],
+    "question": "Which observability strategy best fits scale?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Implement structured, correlated telemetry: per-request trace IDs, per-tool/per-subagent spans with latency and structured error categories, aggregated in a monitoring backend."
+      },
+      {
+        "key": "B",
+        "text": "Add more verbose free-text logging inside each tool and grep it manually when issues arise."
+      },
+      {
+        "key": "C",
+        "text": "Sample 1% of requests and ignore the rest to keep logging cheap."
+      },
+      {
+        "key": "D",
+        "text": "Show users more detailed raw error messages so they can report specifics."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Correlated tracing with per-component spans, latency, and structured error categories is what localizes failures and reconstructs a request end-to-end at scale.",
+    "whyFail": {
+      "B": "Free-text logs grepped by hand do not scale and lack cross-component correlation.",
+      "C": "1% sampling routinely misses the failures you most need to diagnose.",
+      "D": "Exposing raw errors to users is a poor practice and still lacks internal correlation."
+    }
+  },
+  {
+    "id": "int-08",
+    "created": "2026-07-22",
+    "domain": "Integration",
+    "scenario": "A knowledge assistant currently front-loads a giant static context bundle (all schemas, all doc catalogs, all tool manuals) into every request 'so the model has everything.' Costs are high and irrelevant context sometimes distracts the model.",
+    "constraints": [
+      {
+        "label": "Token cost",
+        "text": "Monolithic context is expensive per request."
+      },
+      {
+        "label": "Relevance",
+        "text": "Most bundled context is unused per query."
+      },
+      {
+        "label": "Discovery",
+        "text": "The model needs a way to fetch only what a query requires."
+      }
+    ],
+    "question": "Which strategy better balances capability and efficiency?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Progressive discovery: expose catalogs/resources and let the agent retrieve only the specific context a query needs, rather than loading everything up front."
+      },
+      {
+        "key": "B",
+        "text": "Keep the monolithic bundle but compress it with abbreviations."
+      },
+      {
+        "key": "C",
+        "text": "Load everything but move it to the end of the prompt."
+      },
+      {
+        "key": "D",
+        "text": "Load everything and rely on a larger context window to absorb the cost."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Progressive discovery via resources/catalogs lets the agent pull only relevant context per query, cutting cost and reducing distraction versus a monolithic bundle.",
+    "whyFail": {
+      "B": "Abbreviating the monolith still ships mostly-irrelevant context and its cost every request.",
+      "C": "Repositioning the monolith does not reduce token cost or irrelevance.",
+      "D": "A bigger window just makes it affordable to keep wasting tokens and distracting the model."
+    }
+  },
+  {
+    "id": "int-09",
+    "created": "2026-07-22",
+    "domain": "Integration",
+    "scenario": "A RAG deployment retrieves by dense vector similarity only. It excels at fuzzy semantic questions but fails on queries needing exact identifiers, product codes, and rare acronyms, which similarity search overlooks.",
+    "constraints": [
+      {
+        "label": "Query mix",
+        "text": "Both semantic questions and exact-token lookups occur."
+      },
+      {
+        "label": "Exact match",
+        "text": "Identifiers/codes must be retrievable precisely."
+      },
+      {
+        "label": "Recall",
+        "text": "Neither query type should be starved."
+      }
+    ],
+    "question": "Which retrieval strategy best matches this data/query shape?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Hybrid retrieval combining dense semantic search with keyword/lexical search (and reranking) so exact tokens and fuzzy meaning are both served."
+      },
+      {
+        "key": "B",
+        "text": "Increase the embedding dimension to capture exact codes better."
+      },
+      {
+        "key": "C",
+        "text": "Lower the similarity threshold so more chunks are always returned."
+      },
+      {
+        "key": "D",
+        "text": "Replace vectors entirely with keyword search only."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Matching retrieval to a mixed query pattern means combining lexical and dense methods (hybrid, often with reranking), which serves exact-token lookups and semantic questions alike.",
+    "whyFail": {
+      "B": "Bigger embeddings do not make dense similarity reliable for exact rare tokens.",
+      "C": "Returning more chunks indiscriminately hurts precision and still misses exact matches semantically.",
+      "D": "Keyword-only regresses on the fuzzy semantic questions dense search handled well."
+    }
+  },
+  {
+    "id": "int-10",
+    "created": "2026-07-22",
+    "domain": "Integration",
+    "scenario": "Two autonomous systems need to cooperate: an internal research agent must request analyses from a partner org's agent, which exposes a standardized agent interface. The teams want a protocol-level way for the agents to interoperate rather than custom point integrations.",
+    "constraints": [
+      {
+        "label": "Interop",
+        "text": "Two independently-built agents must collaborate."
+      },
+      {
+        "label": "Boundary",
+        "text": "They belong to different orgs/systems."
+      },
+      {
+        "label": "Standardization",
+        "text": "Prefer a defined agent-to-agent mechanism over bespoke glue."
+      }
+    ],
+    "question": "Which integration mechanism is most appropriate?",
+    "options": [
+      {
+        "key": "A",
+        "text": "An agent-to-agent interaction pattern over a standardized interface, so the two agents interoperate through a defined protocol."
+      },
+      {
+        "key": "B",
+        "text": "Embed one org's private API keys in the other org's prompt and call directly."
+      },
+      {
+        "key": "C",
+        "text": "Have each agent screen-scrape the other's chat UI."
+      },
+      {
+        "key": "D",
+        "text": "Merge both agents into a single codebase owned by one org."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Cross-boundary cooperation between independently-built agents is the agent-to-agent case: a standardized interaction protocol lets them interoperate without bespoke, brittle integration.",
+    "whyFail": {
+      "B": "Embedding another org's private keys in prompts is a security and boundary violation.",
+      "C": "Screen-scraping a UI is fragile and not a real integration protocol.",
+      "D": "Merging codebases across orgs is usually infeasible and defeats the interop requirement."
+    }
+  },
+  {
+    "id": "int-11",
+    "created": "2026-07-22",
+    "domain": "Integration",
+    "scenario": "An agent authenticates to several backend tools using a single shared service account with broad write scopes, and the same token is reused whether the request originated from an admin or a read-only end user. A security review flags authorization gaps.",
+    "constraints": [
+      {
+        "label": "Authorization",
+        "text": "End-user permissions are not reflected in tool calls."
+      },
+      {
+        "label": "Scope",
+        "text": "The shared account has more scope than most requests need."
+      },
+      {
+        "label": "Least privilege",
+        "text": "Actions must be bounded by the requester's rights."
+      }
+    ],
+    "question": "Which change best closes the authorization gap?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Propagate the end user's identity/permissions to tool calls and scope tokens to the minimum needed per action, rather than a broad shared service account."
+      },
+      {
+        "key": "B",
+        "text": "Rotate the shared token more frequently."
+      },
+      {
+        "key": "C",
+        "text": "Add a note to the system prompt telling the model to respect user permissions."
+      },
+      {
+        "key": "D",
+        "text": "Log every tool call so unauthorized actions can be reviewed afterward."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Reflecting the requester's identity and scoping tokens to the minimum per action enforces authorization at the boundary, closing the gap that a broad shared account creates.",
+    "whyFail": {
+      "B": "Rotation addresses credential theft window, not the missing per-user authorization scoping.",
+      "C": "A prompt instruction cannot enforce authorization; permissions must be enforced by the system.",
+      "D": "After-the-fact logging is detective, not preventive; unauthorized actions still execute."
+    }
+  },
+  {
+    "id": "eto-01",
+    "created": "2026-07-22",
+    "domain": "Evaluation, Testing & Optimization",
+    "scenario": "A RAG system that was accurate for months suddenly returns confident but incorrect answers immediately after a scheduled document refresh. Latency and the model version are unchanged.",
+    "constraints": [
+      {
+        "label": "Trigger",
+        "text": "Failure began exactly at a document refresh."
+      },
+      {
+        "label": "Unchanged",
+        "text": "Latency and model version did not change."
+      },
+      {
+        "label": "Symptom",
+        "text": "Confident but wrong answers."
+      }
+    ],
+    "question": "What is the most likely first place to investigate?",
+    "options": [
+      {
+        "key": "A",
+        "text": "The retrieval/indexing step returning irrelevant or stale chunks (e.g., a broken re-index or mismatched embeddings)."
+      },
+      {
+        "key": "B",
+        "text": "The model weights silently changed."
+      },
+      {
+        "key": "C",
+        "text": "The temperature setting is too low."
+      },
+      {
+        "key": "D",
+        "text": "The context window shrank."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Confident-but-wrong answers appearing exactly at a document refresh, with model and latency unchanged, point to retrieval feeding poor context, such as a broken re-index or embedding mismatch.",
+    "whyFail": {
+      "B": "Model version is stated unchanged, so silently changed weights is inconsistent with the evidence.",
+      "C": "Temperature would not be triggered specifically by a document refresh.",
+      "D": "A shrunken context window would not be caused by refreshing documents and would show different symptoms."
+    }
+  },
+  {
+    "id": "eto-02",
+    "created": "2026-07-22",
+    "domain": "Evaluation, Testing & Optimization",
+    "scenario": "A team reports 97% overall extraction accuracy and wants to automate away human review. A reviewer worries the aggregate could mask poor performance on specific document types or fields.",
+    "constraints": [
+      {
+        "label": "Aggregate risk",
+        "text": "97% overall may hide segment failures."
+      },
+      {
+        "label": "Segments",
+        "text": "Multiple document types and fields exist."
+      },
+      {
+        "label": "Safety",
+        "text": "Automating a weak segment could be costly."
+      }
+    ],
+    "question": "Which evaluation approach best validates readiness to reduce human review?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Segment accuracy by document type and field, and use stratified sampling to confirm consistent performance before automating any segment."
+      },
+      {
+        "key": "B",
+        "text": "Trust the 97% aggregate and automate all segments at once."
+      },
+      {
+        "key": "C",
+        "text": "Increase the sample size for the aggregate metric only."
+      },
+      {
+        "key": "D",
+        "text": "Automate the segments the team feels most confident about subjectively."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Segmenting accuracy by document type and field, with stratified sampling, reveals whether the aggregate hides weak segments, which is the correct basis for deciding where automation is safe.",
+    "whyFail": {
+      "B": "Trusting the aggregate is exactly the failure the reviewer warned about.",
+      "C": "A bigger aggregate sample still masks per-segment variation.",
+      "D": "Subjective confidence is not evidence of per-segment accuracy."
+    }
+  },
+  {
+    "id": "eto-03",
+    "created": "2026-07-22",
+    "domain": "Evaluation, Testing & Optimization",
+    "scenario": "A code-review assistant produces many false positives on minor style nits, eroding developer trust so much that its accurate security findings are ignored too. The team wants to restore trust while improving.",
+    "constraints": [
+      {
+        "label": "False positives",
+        "text": "High FP rate on low-value style nits."
+      },
+      {
+        "label": "Trust spillover",
+        "text": "FP noise undermines the valuable categories."
+      },
+      {
+        "label": "Recovery",
+        "text": "Need a path to restore confidence."
+      }
+    ],
+    "question": "What is the most effective combined response?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Temporarily disable the high-false-positive categories to restore trust, and define explicit criteria for what to report while improving those categories offline."
+      },
+      {
+        "key": "B",
+        "text": "Tell the model to 'only report high-confidence issues' and keep all categories on."
+      },
+      {
+        "key": "C",
+        "text": "Ship all categories but add a disclaimer that some findings may be noise."
+      },
+      {
+        "key": "D",
+        "text": "Increase the number of categories so useful findings outweigh the noise."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Disabling the noisy categories immediately restores trust in the remaining accurate ones, while explicit reporting criteria (not vague confidence appeals) improve the disabled categories before re-enabling.",
+    "whyFail": {
+      "B": "Vague 'high-confidence' instructions do not reliably reduce false positives; the model is already miscalibrated.",
+      "C": "A disclaimer does not stop the noise from eroding trust in valuable findings.",
+      "D": "Adding categories increases surface area for more noise, not less."
+    }
+  },
+  {
+    "id": "eto-04",
+    "created": "2026-07-22",
+    "domain": "Evaluation, Testing & Optimization",
+    "scenario": "A team wants to know whether a new prompt genuinely improves answer quality over the current one, or whether observed gains are noise. They currently 'eyeball a few outputs' after each change.",
+    "constraints": [
+      {
+        "label": "Rigor",
+        "text": "Need statistically meaningful comparison, not vibes."
+      },
+      {
+        "label": "Fairness",
+        "text": "Both prompts must see comparable inputs."
+      },
+      {
+        "label": "Metric",
+        "text": "Quality must be measurable."
+      }
+    ],
+    "question": "Which evaluation method best supports the decision?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Run a controlled A/B test on a held-out labeled dataset with a defined quality metric, comparing the two prompts on the same inputs."
+      },
+      {
+        "key": "B",
+        "text": "Deploy the new prompt to all users immediately and watch for complaints."
+      },
+      {
+        "key": "C",
+        "text": "Ask the model which of its own two prompts is better."
+      },
+      {
+        "key": "D",
+        "text": "Compare a handful of cherry-picked good outputs from each prompt."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "A controlled A/B comparison on a labeled dataset with a defined metric gives an apples-to-apples, statistically meaningful basis for choosing the better prompt, replacing eyeballing.",
+    "whyFail": {
+      "B": "Full deployment with complaint-watching lacks a control and a metric and risks all users.",
+      "C": "Self-preference is not a valid, calibrated quality measure.",
+      "D": "Cherry-picking outputs is precisely the biased eyeballing the team must move past."
+    }
+  },
+  {
+    "id": "eto-05",
+    "created": "2026-07-22",
+    "domain": "Evaluation, Testing & Optimization",
+    "scenario": "An assistant occasionally fabricates plausible but unsupported facts (hallucinations) when the retrieved context lacks the answer. The team must decide where to intervene.",
+    "constraints": [
+      {
+        "label": "Root cause",
+        "text": "Fabrication occurs when context lacks the answer."
+      },
+      {
+        "label": "Trust",
+        "text": "Unsupported claims are unacceptable."
+      },
+      {
+        "label": "Diagnosis",
+        "text": "Distinguish missing-context from model error."
+      }
+    ],
+    "question": "What is the most appropriate first diagnostic/mitigation step?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Detect when retrieval fails to surface an answer and have the system abstain or say it cannot find support, rather than letting the model fill gaps."
+      },
+      {
+        "key": "B",
+        "text": "Raise the temperature so answers are more varied."
+      },
+      {
+        "key": "C",
+        "text": "Switch to a smaller model to reduce elaborate fabrications."
+      },
+      {
+        "key": "D",
+        "text": "Instruct the model to 'never be wrong' in the system prompt."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "When fabrication stems from missing context, the fix is to detect unsupported cases and abstain/flag rather than allow the model to invent, which directly targets the identified root cause.",
+    "whyFail": {
+      "B": "Higher temperature increases variability and typically worsens fabrication.",
+      "C": "A smaller model does not address missing context and may hallucinate as much or more.",
+      "D": "'Never be wrong' is an unenforceable instruction that does not address absent evidence."
+    }
+  },
+  {
+    "id": "eto-06",
+    "created": "2026-07-22",
+    "domain": "Evaluation, Testing & Optimization",
+    "scenario": "A pipeline's cost is dominated by re-sending an identical large instruction+reference prefix on every one of millions of daily requests. Accuracy is fine; the goal is cost/latency optimization without quality loss.",
+    "constraints": [
+      {
+        "label": "Repetition",
+        "text": "A large prefix is identical across requests."
+      },
+      {
+        "label": "Quality",
+        "text": "No degradation of accuracy allowed."
+      },
+      {
+        "label": "Volume",
+        "text": "Millions of requests per day."
+      }
+    ],
+    "question": "Which optimization most directly reduces cost and latency here?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Enable prompt caching for the repeated static prefix so it is not recomputed and re-billed each request."
+      },
+      {
+        "key": "B",
+        "text": "Truncate the reference material to cut tokens."
+      },
+      {
+        "key": "C",
+        "text": "Downgrade to the cheapest model regardless of task fit."
+      },
+      {
+        "key": "D",
+        "text": "Reduce max_tokens on the output to save cost."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Caching the identical static prefix eliminates redundant recomputation and per-request cost for the repeated tokens without touching accuracy, directly optimizing cost and latency at volume.",
+    "whyFail": {
+      "B": "Truncating reference material risks quality, violating the no-degradation constraint.",
+      "C": "Blind downgrade risks accuracy on the task.",
+      "D": "Capping output tokens does not address the dominant cost, which is the repeated input prefix."
+    }
+  },
+  {
+    "id": "eto-07",
+    "created": "2026-07-22",
+    "domain": "Evaluation, Testing & Optimization",
+    "scenario": "A single-pass review of a 14-file pull request gives inconsistent depth: detailed on some files, superficial on others, misses obvious bugs, and even contradicts itself (flags a pattern in one file, approves identical code in another).",
+    "constraints": [
+      {
+        "label": "Attention dilution",
+        "text": "Quality degrades across many files at once."
+      },
+      {
+        "label": "Consistency",
+        "text": "Identical code should be judged identically."
+      },
+      {
+        "label": "Cross-file",
+        "text": "Some issues span files."
+      }
+    ],
+    "question": "How should the review be restructured?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Split into focused passes: analyze each file individually for local issues, then run a separate integration pass over cross-file data flow."
+      },
+      {
+        "key": "B",
+        "text": "Require developers to break large PRs into 3-4 file submissions before review."
+      },
+      {
+        "key": "C",
+        "text": "Move to a larger context window and keep the single-pass approach."
+      },
+      {
+        "key": "D",
+        "text": "Run three full-PR passes and only report issues found in at least two runs."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Per-file passes give consistent local depth and eliminate contradictory judgments, while a dedicated integration pass catches cross-file issues, directly addressing attention dilution.",
+    "whyFail": {
+      "B": "Shifting the burden to developers does not improve the review system itself.",
+      "C": "Larger context does not fix attention quality across many files in one pass.",
+      "D": "Consensus-of-three suppresses real bugs that are only caught intermittently."
+    }
+  },
+  {
+    "id": "eto-08",
+    "created": "2026-07-22",
+    "domain": "Evaluation, Testing & Optimization",
+    "scenario": "A team must define success metrics for a new customer-facing assistant before launch. So far they only track 'accuracy.' Leadership also cares about responsiveness, spend, and unsafe outputs.",
+    "constraints": [
+      {
+        "label": "Multi-metric",
+        "text": "Quality, latency, cost, and safety all matter."
+      },
+      {
+        "label": "Actionability",
+        "text": "Metrics must guide operational decisions."
+      },
+      {
+        "label": "Pre-launch",
+        "text": "Baselines needed before go-live."
+      }
+    ],
+    "question": "Which metric definition approach is most complete?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Define a metric set spanning accuracy, latency, cost, and safety/security, each with a target and measurement method, baselined before launch."
+      },
+      {
+        "key": "B",
+        "text": "Track only accuracy, since a correct answer implies everything else is fine."
+      },
+      {
+        "key": "C",
+        "text": "Track user satisfaction surveys alone as a proxy for all dimensions."
+      },
+      {
+        "key": "D",
+        "text": "Defer metric definition until after launch when real traffic exists."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "A complete evaluation defines accuracy, latency, cost, and safety metrics with targets and measurement methods and baselines them pre-launch, matching what leadership actually cares about.",
+    "whyFail": {
+      "B": "Accuracy alone ignores latency, cost, and safety, which are explicit concerns.",
+      "C": "Satisfaction surveys are lagging and cannot substitute for cost, latency, and safety measurement.",
+      "D": "Deferring metrics leaves launch with no baseline and no way to detect regressions."
+    }
+  },
+  {
+    "id": "eto-09",
+    "created": "2026-07-22",
+    "domain": "Evaluation, Testing & Optimization",
+    "scenario": "An extraction system's validation fails when the model returns totals that do not equal the sum of line items, and when values land in the wrong fields. The team uses tool_use with a strict JSON schema and assumes that guarantees correctness.",
+    "constraints": [
+      {
+        "label": "Schema strictness",
+        "text": "Tool_use guarantees valid JSON syntax."
+      },
+      {
+        "label": "Semantic errors",
+        "text": "Values can still be internally inconsistent."
+      },
+      {
+        "label": "Quality",
+        "text": "Downstream systems require semantic correctness."
+      }
+    ],
+    "question": "What is the correct understanding and remedy?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Strict schemas eliminate syntax errors but not semantic ones; add semantic validation (e.g., recompute totals, flag conflicts) with retry-on-error feedback."
+      },
+      {
+        "key": "B",
+        "text": "Tighten the JSON schema further; semantic errors are just schema violations."
+      },
+      {
+        "key": "C",
+        "text": "Switch off tool_use and parse free-text output with regex instead."
+      },
+      {
+        "key": "D",
+        "text": "Assume totals are correct because the schema validated."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Tool_use guarantees schema-valid JSON but not semantic validity; recomputing totals and flagging conflicts, then retrying with specific error feedback, addresses the semantic failures the schema cannot catch.",
+    "whyFail": {
+      "B": "A stricter schema still cannot enforce that numbers sum correctly or land in the right field.",
+      "C": "Free-text regex parsing reintroduces the syntax errors tool_use eliminated and does not fix semantics.",
+      "D": "Assuming correctness ignores the exact semantic failures being observed."
+    }
+  },
+  {
+    "id": "eto-10",
+    "created": "2026-07-22",
+    "domain": "Evaluation, Testing & Optimization",
+    "scenario": "Post-launch, an assistant's quality slowly drifts: answers get worse over weeks though nothing was deployed. The team has no ongoing measurement and only notices when complaints spike.",
+    "constraints": [
+      {
+        "label": "Drift",
+        "text": "Silent degradation over time with no deploys."
+      },
+      {
+        "label": "Detection lag",
+        "text": "Problems surface only via complaints."
+      },
+      {
+        "label": "Operations",
+        "text": "Need proactive detection."
+      }
+    ],
+    "question": "Which practice best addresses this?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Continuous monitoring with logged quality/latency/cost metrics on live traffic and alerting on regressions, plus periodic re-evaluation against a held-out set."
+      },
+      {
+        "key": "B",
+        "text": "Re-run the pre-launch test suite once, then rely on user complaints thereafter."
+      },
+      {
+        "key": "C",
+        "text": "Increase model temperature to make answers feel fresher."
+      },
+      {
+        "key": "D",
+        "text": "Redeploy the same version weekly to reset any drift."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Ongoing monitoring of live metrics with regression alerts, plus periodic re-evaluation against a fixed set, catches silent drift proactively instead of waiting for complaints.",
+    "whyFail": {
+      "B": "A one-time re-run plus complaint-watching is exactly the reactive posture that missed the drift.",
+      "C": "Temperature changes mask nothing about drift and can worsen quality.",
+      "D": "Redeploying an unchanged version does not 'reset' data/usage-driven drift and provides no detection."
+    }
+  },
+  {
+    "id": "gov-01",
+    "created": "2026-07-22",
+    "domain": "Governance, Safety & Risk Management",
+    "scenario": "A financial-advice assistant can autonomously execute trades once it forms a recommendation. Compliance requires that no trade executes without a licensed human's explicit approval, regardless of model confidence.",
+    "constraints": [
+      {
+        "label": "Regulatory",
+        "text": "Human approval is mandatory before execution."
+      },
+      {
+        "label": "Determinism",
+        "text": "Approval must be guaranteed, not probabilistic."
+      },
+      {
+        "label": "Accountability",
+        "text": "A named human must sign off."
+      }
+    ],
+    "question": "Which control best satisfies the requirement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A human-in-the-loop gate that programmatically blocks trade execution until a licensed human explicitly approves the specific recommendation."
+      },
+      {
+        "key": "B",
+        "text": "A system-prompt instruction telling the model to seek approval before trading."
+      },
+      {
+        "key": "C",
+        "text": "A confidence threshold above which the model may trade without approval."
+      },
+      {
+        "key": "D",
+        "text": "A daily audit log reviewed the next morning after trades execute."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "A programmatic human-in-the-loop gate guarantees no trade executes without explicit licensed approval, meeting the deterministic, accountable compliance requirement.",
+    "whyFail": {
+      "B": "A prompt instruction is probabilistic and can be bypassed, which is unacceptable for a mandatory gate.",
+      "C": "Any auto-execution threshold violates the requirement that a human must approve every trade.",
+      "D": "Next-day audit is detective; the unapproved trades have already executed."
+    }
+  },
+  {
+    "id": "gov-02",
+    "created": "2026-07-22",
+    "domain": "Governance, Safety & Risk Management",
+    "scenario": "A hospital wants to deploy a Claude-based assistant that processes protected health information. Legal asks how compliance obligations should shape the architecture before any build.",
+    "constraints": [
+      {
+        "label": "Regulation",
+        "text": "HIPAA governs PHI handling."
+      },
+      {
+        "label": "Data flow",
+        "text": "PHI must be protected in transit, at rest, and in logs."
+      },
+      {
+        "label": "Vendor terms",
+        "text": "Data-handling agreements must be in place."
+      }
+    ],
+    "question": "Which approach best incorporates compliance into the design?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Design PHI handling around HIPAA from the start: minimize PHI sent, ensure appropriate data-handling agreements, control access, and avoid PHI leakage into logs/traces."
+      },
+      {
+        "key": "B",
+        "text": "Build the assistant first and add compliance controls if an audit requires them."
+      },
+      {
+        "key": "C",
+        "text": "Anonymize nothing but restrict the assistant to internal users only."
+      },
+      {
+        "key": "D",
+        "text": "Assume the model provider handles all compliance so no design changes are needed."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Building HIPAA obligations into the architecture up front (data minimization, agreements, access control, no PHI in logs) is the correct way to incorporate compliance rather than retrofitting it.",
+    "whyFail": {
+      "B": "Retrofitting compliance after building invites violations and costly rework.",
+      "C": "Internal-only access does not by itself satisfy PHI protection obligations across the data flow.",
+      "D": "Compliance is a shared responsibility; the deploying org must design its own controls."
+    }
+  },
+  {
+    "id": "gov-03",
+    "created": "2026-07-22",
+    "domain": "Governance, Safety & Risk Management",
+    "scenario": "A hiring-screening assistant is found to rank candidates from certain neighborhoods lower, tracking a proxy for a protected attribute. Leadership wants to address fairness and defend the decision process.",
+    "constraints": [
+      {
+        "label": "Fairness",
+        "text": "Outcomes must not disadvantage protected groups."
+      },
+      {
+        "label": "Transparency",
+        "text": "Decisions must be explainable and auditable."
+      },
+      {
+        "label": "Proxy risk",
+        "text": "Features can encode protected attributes indirectly."
+      }
+    ],
+    "question": "What is the most responsible course of action?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Audit features and outcomes for proxy bias, remove/mitigate biased signals, add fairness metrics and human oversight, and document the process for transparency."
+      },
+      {
+        "key": "B",
+        "text": "Keep the model as-is but stop publishing the neighborhood field in reports."
+      },
+      {
+        "key": "C",
+        "text": "Add a disclaimer that the tool 'may contain bias' and continue using it unchanged."
+      },
+      {
+        "key": "D",
+        "text": "Increase the model size, assuming a stronger model is inherently fairer."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Auditing for proxy bias, mitigating biased signals, tracking fairness metrics with human oversight, and documenting the process directly addresses fairness, transparency, and the proxy-attribute risk.",
+    "whyFail": {
+      "B": "Hiding the field does not remove the biased ranking behavior it drives.",
+      "C": "A disclaimer neither fixes nor justifies continued biased decisions.",
+      "D": "Model capability does not guarantee fairness and can even amplify learned proxies."
+    }
+  },
+  {
+    "id": "gov-04",
+    "created": "2026-07-22",
+    "domain": "Governance, Safety & Risk Management",
+    "scenario": "An architect enumerates failure modes for an LLM customer assistant before launch: it may hallucinate, be prompt-injected via user content, leak system instructions, or take unauthorized actions via tools. Leadership wants prioritized guardrails.",
+    "constraints": [
+      {
+        "label": "Failure modes",
+        "text": "Multiple distinct LLM risks identified."
+      },
+      {
+        "label": "Layered defense",
+        "text": "Prefer defense-in-depth over one control."
+      },
+      {
+        "label": "Impact",
+        "text": "Unauthorized actions have the highest blast radius."
+      }
+    ],
+    "question": "Which guardrail strategy is soundest?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Apply layered controls mapped to each failure mode: input/output validation, tool authorization and least privilege, injection-resistant prompt structure, and monitoring, prioritizing the highest-impact actions."
+      },
+      {
+        "key": "B",
+        "text": "Pick the single strongest guardrail and rely on it exclusively to keep things simple."
+      },
+      {
+        "key": "C",
+        "text": "Rely on the model's built-in alignment and add no additional controls."
+      },
+      {
+        "key": "D",
+        "text": "Address only hallucination, since it is the most commonly discussed risk."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Mapping layered guardrails to each identified failure mode, and prioritizing the highest-impact ones (unauthorized actions), gives defense-in-depth appropriate to a multi-risk system.",
+    "whyFail": {
+      "B": "A single control leaves the other enumerated failure modes unmitigated.",
+      "C": "Relying solely on built-in behavior ignores injection, leakage, and unauthorized-action risks.",
+      "D": "Addressing only hallucination leaves the highest-blast-radius risks open."
+    }
+  },
+  {
+    "id": "gov-05",
+    "created": "2026-07-22",
+    "domain": "Governance, Safety & Risk Management",
+    "scenario": "A public-sector deployment must run within a US federal compliance boundary and demonstrate authorized, monitored, access-controlled operation for a government workload.",
+    "constraints": [
+      {
+        "label": "Framework",
+        "text": "FedRAMP-style authorization is required."
+      },
+      {
+        "label": "Boundary",
+        "text": "Workload must run within an authorized environment."
+      },
+      {
+        "label": "Evidence",
+        "text": "Continuous monitoring and access control must be demonstrable."
+      }
+    ],
+    "question": "Which is the most appropriate governance stance?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Deploy within an authorized/compliant environment, enforce access controls, and maintain continuous monitoring and documentation to satisfy the federal authorization requirements."
+      },
+      {
+        "key": "B",
+        "text": "Deploy in any commercial environment and self-attest compliance without external authorization."
+      },
+      {
+        "key": "C",
+        "text": "Rely on the model provider's general security posture and skip environment authorization."
+      },
+      {
+        "key": "D",
+        "text": "Disable logging to reduce the sensitive-data footprint in the government environment."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Federal workloads require running in an authorized/compliant environment with enforced access control and continuous monitoring plus documentation, which is the correct governance stance.",
+    "whyFail": {
+      "B": "Self-attestation in an unauthorized environment does not meet federal authorization requirements.",
+      "C": "Provider security does not substitute for the deployment's own environment authorization.",
+      "D": "Disabling logging undermines the continuous monitoring the framework requires."
+    }
+  },
+  {
+    "id": "gov-06",
+    "created": "2026-07-22",
+    "domain": "Governance, Safety & Risk Management",
+    "scenario": "A multi-issue support agent handles refunds. Policy allows automatic refunds up to $500; anything above must go to a human. The team currently relies on a system-prompt line saying 'do not refund more than $500 automatically,' and occasional over-limit refunds have slipped through.",
+    "constraints": [
+      {
+        "label": "Hard limit",
+        "text": "Refunds over $500 must never auto-execute."
+      },
+      {
+        "label": "Observed leakage",
+        "text": "Prompt-only enforcement has failed intermittently."
+      },
+      {
+        "label": "Compliance",
+        "text": "The threshold is a firm business rule."
+      }
+    ],
+    "question": "Which control best enforces the threshold?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A tool-call interception hook that programmatically blocks refunds over $500 and redirects them to human escalation."
+      },
+      {
+        "key": "B",
+        "text": "Reword the system-prompt instruction more firmly and add capital letters."
+      },
+      {
+        "key": "C",
+        "text": "Add a few-shot example of refusing a large refund."
+      },
+      {
+        "key": "D",
+        "text": "Ask the model to double-check the amount before refunding."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "A hook that intercepts the tool call and blocks over-threshold refunds gives deterministic enforcement of a firm business rule, which prompt-based approaches have already failed to guarantee.",
+    "whyFail": {
+      "B": "Firmer wording is still probabilistic and has already leaked.",
+      "C": "A few-shot example improves tendencies but does not guarantee the hard limit.",
+      "D": "Self-checking is probabilistic and cannot guarantee the threshold holds every time."
+    }
+  },
+  {
+    "id": "gov-07",
+    "created": "2026-07-22",
+    "domain": "Governance, Safety & Risk Management",
+    "scenario": "A GDPR-governed EU assistant stores full conversation transcripts, including personal data, indefinitely, and has no mechanism for users to obtain or delete their data. Legal flags multiple gaps.",
+    "constraints": [
+      {
+        "label": "Data subject rights",
+        "text": "Users can request access and erasure."
+      },
+      {
+        "label": "Minimization",
+        "text": "Only necessary personal data should be retained, for a limited time."
+      },
+      {
+        "label": "Lawful basis",
+        "text": "Processing must be justified and documented."
+      }
+    ],
+    "question": "Which redesign best addresses the compliance gaps?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Implement data minimization and retention limits, provide access/erasure mechanisms for data subjects, and document lawful basis and processing."
+      },
+      {
+        "key": "B",
+        "text": "Keep storing everything but encrypt the transcripts at rest."
+      },
+      {
+        "key": "C",
+        "text": "Move storage to a different region and continue indefinite retention."
+      },
+      {
+        "key": "D",
+        "text": "Delete all logging so there is no personal data to govern."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "GDPR requires honoring data-subject access/erasure, minimizing and time-limiting retention, and documenting lawful basis, which this redesign directly provides.",
+    "whyFail": {
+      "B": "Encryption protects data at rest but does not satisfy access/erasure rights, minimization, or retention limits.",
+      "C": "Changing region does not cure indefinite retention or missing data-subject rights.",
+      "D": "Eliminating all logging harms observability/safety and is an overcorrection rather than a compliant design."
+    }
+  },
+  {
+    "id": "gov-08",
+    "created": "2026-07-22",
+    "domain": "Governance, Safety & Risk Management",
+    "scenario": "An agent autonomously resolves cases but occasionally encounters situations where policy is silent or ambiguous. Currently it improvises a decision, sometimes contradicting later human rulings. The team wants a safe pattern for these gaps.",
+    "constraints": [
+      {
+        "label": "Policy gaps",
+        "text": "Some cases fall outside written policy."
+      },
+      {
+        "label": "Risk",
+        "text": "Improvised decisions create inconsistency and liability."
+      },
+      {
+        "label": "Oversight",
+        "text": "Humans must own genuinely ambiguous calls."
+      }
+    ],
+    "question": "Which human-in-the-loop pattern is most appropriate?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Escalate to a human whenever policy is silent or ambiguous on the specific request, rather than letting the agent improvise."
+      },
+      {
+        "key": "B",
+        "text": "Have the agent pick the interpretation that resolves the case fastest."
+      },
+      {
+        "key": "C",
+        "text": "Let the agent decide autonomously but flag the case for review next quarter."
+      },
+      {
+        "key": "D",
+        "text": "Escalate only when the customer's sentiment is negative."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Routing policy-gap and ambiguous cases to humans places genuinely uncertain judgments with the accountable humans, which is the correct human-in-the-loop trigger.",
+    "whyFail": {
+      "B": "Optimizing for speed on ambiguous cases invites inconsistent, liability-creating decisions.",
+      "C": "Quarterly review is too late; the improvised decision has already taken effect.",
+      "D": "Sentiment does not correlate with policy ambiguity and mis-triggers escalation."
+    }
+  },
+  {
+    "id": "stk-01",
+    "created": "2026-07-22",
+    "domain": "Stakeholder Communication & Lifecycle Management",
+    "scenario": "A client says 'we want an AI to handle our customer emails.' The architect must run discovery before proposing anything, but the client keeps jumping to solutions (which model, which vendor).",
+    "constraints": [
+      {
+        "label": "Ambiguity",
+        "text": "The business problem is under-specified."
+      },
+      {
+        "label": "Solution-jumping",
+        "text": "Client fixates on tools, not outcomes."
+      },
+      {
+        "label": "Foundations",
+        "text": "Scope and success criteria are undefined."
+      }
+    ],
+    "question": "What should the architect prioritize first?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Structured discovery to surface the actual problem, current process, volumes, success criteria, and constraints before discussing any solution."
+      },
+      {
+        "key": "B",
+        "text": "Agree to the client's preferred model immediately to build rapport."
+      },
+      {
+        "key": "C",
+        "text": "Start prototyping so there is something concrete to react to."
+      },
+      {
+        "key": "D",
+        "text": "Produce a vendor comparison matrix as the first deliverable."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Structured discovery of the real problem, process, volumes, success criteria, and constraints is the necessary first step; solutioning before understanding the problem is premature.",
+    "whyFail": {
+      "B": "Committing to a model before understanding the problem locks in an unjustified choice.",
+      "C": "Prototyping without defined success criteria risks building the wrong thing.",
+      "D": "A vendor matrix answers a question that has not yet been properly framed."
+    }
+  },
+  {
+    "id": "stk-02",
+    "created": "2026-07-22",
+    "domain": "Stakeholder Communication & Lifecycle Management",
+    "scenario": "An architect must present a design decision to a mixed audience: engineers want the trade-off detail, while executives want cost, risk, and timeline implications. A single dense technical deck previously lost the executives.",
+    "constraints": [
+      {
+        "label": "Audience",
+        "text": "Technical and executive stakeholders together."
+      },
+      {
+        "label": "Trade-offs",
+        "text": "The decision involves accuracy/cost/latency trade-offs."
+      },
+      {
+        "label": "Actionability",
+        "text": "Executives must be able to decide."
+      }
+    ],
+    "question": "How should the architect communicate the decision most effectively?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Lead with the decision, its business implications (cost, risk, timeline), and the key trade-offs in plain terms, with technical depth available as backup for engineers."
+      },
+      {
+        "key": "B",
+        "text": "Present the full technical trade-off analysis in maximum detail to everyone."
+      },
+      {
+        "key": "C",
+        "text": "Give executives only the recommendation with no rationale or trade-offs."
+      },
+      {
+        "key": "D",
+        "text": "Defer the decision until engineers and executives can be briefed in separate weeks."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Leading with the decision and its business implications and trade-offs in plain language, with technical depth as backup, serves both audiences and lets executives decide.",
+    "whyFail": {
+      "B": "Maximum technical detail for all is what already lost the executives.",
+      "C": "A recommendation with no rationale prevents informed executive decision-making.",
+      "D": "Splitting into separate weeks needlessly delays a decision both audiences can hear together."
+    }
+  },
+  {
+    "id": "stk-03",
+    "created": "2026-07-22",
+    "domain": "Stakeholder Communication & Lifecycle Management",
+    "scenario": "A stakeholder expects the assistant to be '100% accurate' and available instantly. The architect knows realistic figures are ~95% on the hard segment and a p95 latency of a few seconds. Expectations are misaligned before launch.",
+    "constraints": [
+      {
+        "label": "Expectation gap",
+        "text": "Stakeholder expects perfection and instant response."
+      },
+      {
+        "label": "Reality",
+        "text": "Achievable accuracy and latency are bounded."
+      },
+      {
+        "label": "SLA",
+        "text": "Commitments must be sustainable."
+      }
+    ],
+    "question": "What is the best expectation-alignment approach?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Align on measurable, realistic SLAs (e.g., accuracy on defined segments, p95 latency) and explain the trade-offs, agreeing on targets both sides can commit to."
+      },
+      {
+        "key": "B",
+        "text": "Promise 100% accuracy to close the deal and manage disappointment later."
+      },
+      {
+        "key": "C",
+        "text": "Avoid committing to any numbers to keep flexibility."
+      },
+      {
+        "key": "D",
+        "text": "Tell the stakeholder their expectations are wrong and move on."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Setting measurable, realistic SLAs and explaining the trade-offs produces commitments both sides can sustain and closes the expectation gap honestly.",
+    "whyFail": {
+      "B": "Promising perfection guarantees an SLA breach and lost trust.",
+      "C": "Refusing to commit to numbers leaves expectations unmanaged and the project unmeasurable.",
+      "D": "Dismissing the stakeholder damages the relationship and does not build shared, realistic targets."
+    }
+  },
+  {
+    "id": "stk-04",
+    "created": "2026-07-22",
+    "domain": "Stakeholder Communication & Lifecycle Management",
+    "scenario": "After a successful pilot, the project must transition from the delivery team to the client's operations team. There is no documentation of the architecture, prompts, guardrails, or known limitations, and the ops team has not been briefed.",
+    "constraints": [
+      {
+        "label": "Handoff",
+        "text": "Ownership moves to a different team."
+      },
+      {
+        "label": "Continuity",
+        "text": "Ops must operate and iterate safely."
+      },
+      {
+        "label": "Knowledge",
+        "text": "Design rationale currently lives only with the builders."
+      }
+    ],
+    "question": "What is the most important lifecycle activity before handoff?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Produce architecture and operational documentation (design rationale, prompts, guardrails, limitations, runbooks) and brief the ops team so they can operate and iterate."
+      },
+      {
+        "key": "B",
+        "text": "Hand over the code repository link and consider the transition complete."
+      },
+      {
+        "key": "C",
+        "text": "Keep the delivery team on call indefinitely instead of documenting."
+      },
+      {
+        "key": "D",
+        "text": "Delay handoff until the system needs no further changes."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Documenting the architecture, prompts, guardrails, limitations, and runbooks, plus briefing ops, is the lifecycle handoff activity that enables safe continued operation and iteration.",
+    "whyFail": {
+      "B": "A bare repo link leaves rationale, guardrails, and limitations untransferred.",
+      "C": "Indefinite on-call is not a handoff and creates a permanent dependency.",
+      "D": "Systems always need changes; waiting for 'done' means the handoff never happens."
+    }
+  },
+  {
+    "id": "stk-05",
+    "created": "2026-07-22",
+    "domain": "Stakeholder Communication & Lifecycle Management",
+    "scenario": "Mid-project, the client requests a major new capability that would jeopardize the agreed timeline and SLA. The architect must manage the feedback and expectations without simply refusing or silently absorbing the scope.",
+    "constraints": [
+      {
+        "label": "Scope change",
+        "text": "New request affects timeline and SLA."
+      },
+      {
+        "label": "Relationship",
+        "text": "Client relationship must stay healthy."
+      },
+      {
+        "label": "Commitments",
+        "text": "Existing SLA commitments are at risk."
+      }
+    ],
+    "question": "What is the best way to handle the request?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Acknowledge the request, make the timeline/SLA trade-offs explicit, and offer options (re-scope, re-prioritize, or extend timeline) for the client to choose."
+      },
+      {
+        "key": "B",
+        "text": "Silently add the feature and hope the timeline still holds."
+      },
+      {
+        "key": "C",
+        "text": "Refuse the request outright to protect the schedule."
+      },
+      {
+        "key": "D",
+        "text": "Accept it and quietly relax the SLA without telling the client."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Surfacing the trade-offs and offering explicit options lets the client make an informed prioritization decision while protecting commitments and the relationship.",
+    "whyFail": {
+      "B": "Silently absorbing scope predictably breaches the timeline/SLA and erodes trust when it slips.",
+      "C": "A flat refusal harms the relationship and forecloses viable re-scoping options.",
+      "D": "Quietly relaxing the SLA breaks a commitment without the client's knowledge or consent."
+    }
+  },
+  {
+    "id": "stk-06",
+    "created": "2026-07-22",
+    "domain": "Stakeholder Communication & Lifecycle Management",
+    "scenario": "During discovery for a document-processing solution, the architect gathers requirements only from the project sponsor. After delivery, front-line clerks reveal the real documents include many edge cases the sponsor never mentioned, and the system fails on them.",
+    "constraints": [
+      {
+        "label": "Requirement completeness",
+        "text": "Real workflow detail lives with front-line users."
+      },
+      {
+        "label": "Edge cases",
+        "text": "Actual documents are messier than described."
+      },
+      {
+        "label": "Discovery quality",
+        "text": "Single-source requirements were incomplete."
+      }
+    ],
+    "question": "What discovery practice would most have prevented this?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Engage the actual end users (front-line clerks) alongside the sponsor during discovery, and gather representative real documents including edge cases."
+      },
+      {
+        "key": "B",
+        "text": "Trust the sponsor as the single authority to keep discovery efficient."
+      },
+      {
+        "key": "C",
+        "text": "Skip document review and infer requirements from the sponsor's summary."
+      },
+      {
+        "key": "D",
+        "text": "Defer edge-case discovery until after go-live and patch reactively."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Involving the front-line users and collecting representative real documents (including edge cases) during discovery surfaces the true requirements that a sponsor-only view misses.",
+    "whyFail": {
+      "B": "A single sponsor source is exactly what produced the incomplete requirements.",
+      "C": "Inferring from a summary skips the ground-truth documents where the edge cases live.",
+      "D": "Deferring edge cases guarantees the same post-launch failures the team just experienced."
+    }
+  },
+  {
+    "id": "stk-07",
+    "created": "2026-07-22",
+    "domain": "Stakeholder Communication & Lifecycle Management",
+    "scenario": "An architect wants to keep improving the assistant after launch based on real usage, but there is no channel for users to report bad answers and no cadence for reviewing and acting on feedback.",
+    "constraints": [
+      {
+        "label": "Feedback loop",
+        "text": "No structured mechanism to capture user feedback."
+      },
+      {
+        "label": "Iteration",
+        "text": "Improvements should be driven by real usage."
+      },
+      {
+        "label": "Cadence",
+        "text": "Review and action must be regular."
+      }
+    ],
+    "question": "Which lifecycle practice best supports continuous improvement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Establish a structured feedback loop: capture user-flagged issues and usage signals, triage them on a regular cadence, and feed fixes into evaluation and releases."
+      },
+      {
+        "key": "B",
+        "text": "Wait for a major complaint volume before revisiting the system."
+      },
+      {
+        "key": "C",
+        "text": "Rely on the delivery team's intuition about what to improve next."
+      },
+      {
+        "key": "D",
+        "text": "Freeze the system after launch to preserve stability."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "A structured feedback loop that captures issues/usage, triages on a cadence, and channels fixes into evaluation and releases is the lifecycle mechanism for usage-driven continuous improvement.",
+    "whyFail": {
+      "B": "Waiting for complaint spikes is reactive and misses steady, addressable issues.",
+      "C": "Intuition without real signals misallocates improvement effort.",
+      "D": "Freezing the system forgoes the very iteration the architect wants."
+    }
+  },
+  {
+    "id": "stk-08",
+    "created": "2026-07-22",
+    "domain": "Stakeholder Communication & Lifecycle Management",
+    "scenario": "An architect is documenting a delivered system so another team can implement similar solutions. The current document is a narrative of what was built but gives no guidance on how to make the same decisions in a new context.",
+    "constraints": [
+      {
+        "label": "Reusability",
+        "text": "Other teams must apply the approach elsewhere."
+      },
+      {
+        "label": "Decision guidance",
+        "text": "The 'why' behind choices must transfer."
+      },
+      {
+        "label": "Implementation",
+        "text": "Readers need actionable guidance."
+      }
+    ],
+    "question": "What should the documentation add to be most useful?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Decision rationale and implementation guidance: the trade-offs considered, why each choice was made, and how to adapt the approach to different contexts."
+      },
+      {
+        "key": "B",
+        "text": "A longer narrative of the exact steps taken, verbatim, with no rationale."
+      },
+      {
+        "key": "C",
+        "text": "Only the final configuration files with no explanation."
+      },
+      {
+        "key": "D",
+        "text": "A list of tools used, without the reasoning that led to them."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Capturing decision rationale and adaptable implementation guidance lets other teams make the right choices in new contexts, which a bare build narrative cannot provide.",
+    "whyFail": {
+      "B": "A verbatim step narrative without rationale does not transfer decision-making to new contexts.",
+      "C": "Config files alone omit the reasoning needed to adapt the approach.",
+      "D": "A tool list without reasoning gives no basis for choosing differently elsewhere."
+    }
+  },
+  {
+    "id": "dev-01",
+    "created": "2026-07-22",
+    "domain": "Developer Productivity & Operational Enablement",
+    "scenario": "A team adopts Claude Code but each developer has divergent local instructions, so generated code violates shared standards inconsistently. Standards live in individual developers' personal user-level config, not in the repo.",
+    "constraints": [
+      {
+        "label": "Consistency",
+        "text": "All developers must get the same standards."
+      },
+      {
+        "label": "Sharing",
+        "text": "Standards must travel with the repository."
+      },
+      {
+        "label": "Onboarding",
+        "text": "New members should inherit standards automatically."
+      }
+    ],
+    "question": "Where should the shared standards live for consistent team application?",
+    "options": [
+      {
+        "key": "A",
+        "text": "In project-level CLAUDE.md (and project-scoped rules/commands) checked into the repository so every developer inherits them on clone/pull."
+      },
+      {
+        "key": "B",
+        "text": "In each developer's user-level ~/.claude configuration."
+      },
+      {
+        "key": "C",
+        "text": "In a shared wiki page developers are asked to read."
+      },
+      {
+        "key": "D",
+        "text": "Pasted manually into each prompt by each developer."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Project-level CLAUDE.md and project-scoped configuration checked into the repo are shared via version control, so every developer (including new hires) automatically inherits the same standards.",
+    "whyFail": {
+      "B": "User-level config is personal and not shared with teammates via version control, which is the current problem.",
+      "C": "A wiki relies on humans remembering to apply standards; it does not configure the tool.",
+      "D": "Manual pasting is inconsistent and unscalable, the exact failure being observed."
+    }
+  },
+  {
+    "id": "dev-02",
+    "created": "2026-07-22",
+    "domain": "Developer Productivity & Operational Enablement",
+    "scenario": "A team wants a reusable /review command running their code-review checklist, available to every developer automatically when they clone the repository.",
+    "constraints": [
+      {
+        "label": "Availability",
+        "text": "Must be present for all developers on clone/pull."
+      },
+      {
+        "label": "Sharing",
+        "text": "Version-controlled, not personal."
+      },
+      {
+        "label": "Reuse",
+        "text": "Same checklist for the whole team."
+      }
+    ],
+    "question": "Where should the command be defined?",
+    "options": [
+      {
+        "key": "A",
+        "text": "In the project's .claude/commands/ directory, version-controlled in the repository."
+      },
+      {
+        "key": "B",
+        "text": "In each developer's ~/.claude/commands/ personal directory."
+      },
+      {
+        "key": "C",
+        "text": "In the root CLAUDE.md as prose instructions."
+      },
+      {
+        "key": "D",
+        "text": "In a non-existent .claude/config.json commands array."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Project-scoped slash commands in .claude/commands/ are version-controlled and automatically available to everyone who clones or pulls the repo.",
+    "whyFail": {
+      "B": "Personal ~/.claude/commands/ is not shared via version control.",
+      "C": "CLAUDE.md holds context/instructions, not slash-command definitions.",
+      "D": "That configuration mechanism does not exist in Claude Code."
+    }
+  },
+  {
+    "id": "dev-03",
+    "created": "2026-07-22",
+    "domain": "Developer Productivity & Operational Enablement",
+    "scenario": "A developer runs a codebase-analysis skill that emits very verbose discovery output, which then clutters the main conversation and crowds out the actual task context.",
+    "constraints": [
+      {
+        "label": "Context hygiene",
+        "text": "Verbose output must not pollute the main session."
+      },
+      {
+        "label": "Isolation",
+        "text": "Discovery should run separately and return a summary."
+      },
+      {
+        "label": "Productivity",
+        "text": "Main task context must be preserved."
+      }
+    ],
+    "question": "Which configuration best isolates the verbose skill?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Run the skill with context: fork (or via an Explore-style subagent) so verbose output stays isolated and only a summary returns to the main session."
+      },
+      {
+        "key": "B",
+        "text": "Run the skill inline and manually delete the noise afterward."
+      },
+      {
+        "key": "C",
+        "text": "Increase the context window so the noise fits alongside the task."
+      },
+      {
+        "key": "D",
+        "text": "Disable the skill and do the analysis by hand each time."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "context: fork (or an Explore subagent) isolates verbose skill output in a separate context and returns only a summary, preserving the main conversation for the task.",
+    "whyFail": {
+      "B": "Manual cleanup is error-prone and still pollutes context during the run.",
+      "C": "A bigger window just accommodates the clutter rather than isolating it.",
+      "D": "Disabling a useful skill sacrifices the productivity it provides."
+    }
+  },
+  {
+    "id": "dev-04",
+    "created": "2026-07-22",
+    "domain": "Developer Productivity & Operational Enablement",
+    "scenario": "A developer is debugging a failing function with a clear stack trace pointing to one file; the fix is a single well-understood change. Separately, they must plan a library migration affecting 45+ files with multiple valid approaches.",
+    "constraints": [
+      {
+        "label": "Task A",
+        "text": "Single-file, well-understood bug fix."
+      },
+      {
+        "label": "Task B",
+        "text": "Large, multi-file migration with architectural choices."
+      },
+      {
+        "label": "Efficiency",
+        "text": "Match the mode to the task."
+      }
+    ],
+    "question": "Which use of plan mode vs direct execution is correct?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use direct execution for the single-file bug fix and plan mode for the 45-file migration with multiple valid approaches."
+      },
+      {
+        "key": "B",
+        "text": "Use plan mode for both to be thorough."
+      },
+      {
+        "key": "C",
+        "text": "Use direct execution for both to move fast."
+      },
+      {
+        "key": "D",
+        "text": "Use plan mode for the bug fix and direct execution for the migration."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "Direct execution suits the well-scoped single-file fix, while plan mode fits the large, multi-approach migration where exploration and design prevent costly rework, matching mode to complexity.",
+    "whyFail": {
+      "B": "Plan mode on a trivial one-line fix is unnecessary overhead.",
+      "C": "Direct execution on a 45-file architectural migration risks late-discovered dependencies and rework.",
+      "D": "This inverts the correct mapping, over-planning the trivial task and under-planning the complex one."
+    }
+  },
+  {
+    "id": "dev-05",
+    "created": "2026-07-22",
+    "domain": "Developer Productivity & Operational Enablement",
+    "scenario": "A team integrating Claude Code into CI finds the job hangs waiting for interactive input, and downstream steps cannot parse the free-text output to post inline PR comments.",
+    "constraints": [
+      {
+        "label": "Non-interactive",
+        "text": "CI must not wait for interactive input."
+      },
+      {
+        "label": "Machine-readable",
+        "text": "Output must be parseable for automated posting."
+      },
+      {
+        "label": "Automation",
+        "text": "Findings feed an automated PR-comment step."
+      }
+    ],
+    "question": "Which configuration fixes both problems?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Run with the -p/--print flag for non-interactive mode and use --output-format json (with a schema) to produce machine-parseable findings."
+      },
+      {
+        "key": "B",
+        "text": "Set a made-up CLAUDE_HEADLESS=true variable and keep free-text output."
+      },
+      {
+        "key": "C",
+        "text": "Redirect stdin from /dev/null and parse the prose with regex."
+      },
+      {
+        "key": "D",
+        "text": "Add a --batch flag and read the console text."
+      }
+    ],
+    "correct": "A",
+    "correctReason": "The -p/--print flag runs Claude Code non-interactively so CI does not hang, and --output-format json with a schema yields structured, machine-parseable findings for automated PR comments.",
+    "whyFail": {
+      "B": "That environment variable does not exist, and free-text output is still not machine-parseable.",
+      "C": "A stdin redirect is a workaround that does not match the documented flag, and regex on prose is brittle.",
+      "D": "There is no such --batch flag, and console text remains unstructured."
+    }
+  }
+]
