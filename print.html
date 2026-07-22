@@ -85,10 +85,13 @@
   .options{display:grid; gap:6px; margin-top:4px;}
   .opt{border:1px solid var(--line); border-radius:5px; padding:9px 12px; font-size:.9rem; background:#fdfcf9;}
   .opt b{color:var(--accent); font-family:var(--mono); margin-right:6px;}
-  .opt.isCorrect{border-color:var(--accent); background:var(--accent-soft); font-weight:bold;}
-  .opt .whyFail{display:block; font-weight:normal; font-family:var(--mono); font-size:.78rem; color:var(--warn); margin-top:4px;}
+
+  .answerDivider{border:none; border-top:2px dashed var(--line); margin:24px 0;}
 
   .answerKey{margin-top:6px; padding:12px 16px; border-left:3px solid var(--accent); background:var(--accent-soft); font-size:.92rem;}
+  .whyFailList{display:grid; gap:6px; margin-top:10px;}
+  .whyFailItem{border:1px solid var(--line); border-radius:5px; padding:9px 12px; font-size:.88rem; background:#fdfcf9;}
+  .whyFailItem b{color:var(--warn); font-family:var(--mono); margin-right:6px;}
 
   .rationaleWrap{margin-top:16px;}
   .rationaleSvgHolder{margin-top:8px; overflow:visible;}
@@ -222,16 +225,22 @@ function renderRationaleSvg(q){
     });
 }
 
-function optionHtml(q, o){
-  const isCorrect = o.key === q.correct;
-  let html = '<div class="opt' + (isCorrect ? ' isCorrect' : '') + '">';
-  html += '<b>' + o.key + '.</b> ' + o.text;
-  if(isCorrect){
-    html += '<span class="whyFail">✅ Correct — ' + q.correctReason + '</span>';
-  } else if(q.whyFail && q.whyFail[o.key]){
-    html += '<span class="whyFail">✗ Why it fails — ' + q.whyFail[o.key] + '</span>';
+function optionHtml(o){
+  return '<div class="opt"><b>' + o.key + '.</b> ' + o.text + '</div>';
+}
+
+function answerHtml(q){
+  const correctOpt = q.options.find(o => o.key === q.correct);
+  let html = '<hr class="answerDivider">';
+  html += '<h2>Answer</h2>';
+  html += '<div class="answerKey"><b>Correct: ' + correctOpt.key + '.</b> ' + correctOpt.text + '<br><br>' + q.correctReason + '</div>';
+  const wrongOpts = q.options.filter(o => o.key !== q.correct);
+  if(wrongOpts.length){
+    html += '<div class="whyFailList">' + wrongOpts.map(o =>
+      '<div class="whyFailItem"><b>' + o.key + '.</b> Why it fails — ' + (q.whyFail && q.whyFail[o.key] ? q.whyFail[o.key] : '') + '</div>'
+    ).join('') + '</div>';
   }
-  html += '</div>';
+  html += '<div class="rationaleWrap"><h2>🧭 Rationale map</h2><div class="rationaleSvgHolder" id="rationale-' + q.id + '"><div class="rationaleLoading">rendering diagram…</div></div></div>';
   return html;
 }
 
@@ -244,8 +253,8 @@ function questionHtml(q, idx, total){
     html += '<div class="constraints">' + q.constraints.map(c => '<div><b>' + c.label + ':</b> ' + c.text + '</div>').join('') + '</div>';
   }
   html += '<h2>Question</h2><p>' + q.question + '</p>';
-  html += '<div class="options">' + q.options.map(o => optionHtml(q, o)).join('') + '</div>';
-  html += '<div class="rationaleWrap"><h2>🧭 Rationale map</h2><div class="rationaleSvgHolder" id="rationale-' + q.id + '"><div class="rationaleLoading">rendering diagram…</div></div></div>';
+  html += '<div class="options">' + q.options.map(o => optionHtml(o)).join('') + '</div>';
+  html += answerHtml(q);
   html += '</section>';
   return html;
 }
