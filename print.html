@@ -248,9 +248,11 @@ function questionHtml(q, idx, total){
   let html = '<section class="printQuestion" id="pq-' + q.id + '">';
   html += '<div class="pqMeta">Question ' + (idx + 1) + ' of ' + total + (q.created ? ' · Created ' + q.created : '') + '</div>';
   html += '<div class="pqDomain">' + q.domain + '</div>';
-  html += '<h2>Scenario</h2><p>' + q.scenario + '</p>';
-  if(q.constraints && q.constraints.length){
-    html += '<div class="constraints">' + q.constraints.map(c => '<div><b>' + c.label + ':</b> ' + c.text + '</div>').join('') + '</div>';
+  if(q.scenario){
+    html += '<h2>Scenario</h2><p>' + q.scenario + '</p>';
+    if(q.constraints && q.constraints.length){
+      html += '<div class="constraints">' + q.constraints.map(c => '<div><b>' + c.label + ':</b> ' + c.text + '</div>').join('') + '</div>';
+    }
   }
   html += '<h2>Question</h2><p>' + q.question + '</p>';
   html += '<div class="options">' + q.options.map(o => optionHtml(o)).join('') + '</div>';
