@@ -3,23 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Print Answer Key — Claude AI Architect</title>
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: 'base',
-    themeVariables: {
-      fontFamily: "'SF Mono','JetBrains Mono',Consolas,monospace",
-      primaryColor: '#e4ece8',
-      primaryBorderColor: '#2f5d50',
-      primaryTextColor: '#1c2321',
-      lineColor: '#8a8578',
-      background: '#fdfcf9'
-    }
-  });
-  window.mermaid = mermaid;
-  window.dispatchEvent(new Event('mermaid-ready'));
-</script>
 <style>
   :root{
     --ink:#1c2321;
@@ -93,19 +76,37 @@
   .whyFailItem{border:1px solid var(--line); border-radius:5px; padding:9px 12px; font-size:.88rem; background:#fdfcf9;}
   .whyFailItem b{color:var(--warn); font-family:var(--mono); margin-right:6px;}
 
-  .rationaleWrap{margin-top:16px;}
-  .rationaleSvgHolder{margin-top:8px; overflow:visible;}
-  .rationaleSvgHolder svg{width:100% !important; height:auto !important; max-width:640px;}
-  .rationaleLoading{font-family:var(--mono); font-size:.75rem; color:#8a8578;}
+  .notesWrap{margin-top:16px;}
+  .notesBox{
+    margin-top:8px; height:150px; border:1px dashed var(--line); border-radius:5px;
+    background: repeating-linear-gradient(0deg, transparent, transparent 23px, #eeeae0 24px), #fdfcf9;
+  }
 
   .loadStatus{font-family:var(--mono); font-size:.8rem; color:#6b6558; padding:20px 0;}
 
   @media print{
-    body{background:#fff; padding:0;}
+    body{background:#fff; padding:0; line-height:1.28;}
     .topMenu{display:none;}
     .wrap{max-width:none;}
-    .printQuestion{box-shadow:none; margin:0; border:none; border-radius:0; padding:0.4in;}
+    .printQuestion{box-shadow:none; margin:0; border:none; border-radius:0; padding:0.25in;}
     h1, .subtitle{display:none;}
+
+    .pqMeta{margin-bottom:2px; font-size:.62rem;}
+    .pqDomain{margin-bottom:6px; font-size:.66rem;}
+    .printQuestion h2{margin:7px 0 4px; font-size:.62rem;}
+    .printQuestion h2:first-of-type{margin-top:0;}
+    .printQuestion p{margin:0 0 5px; font-size:.73rem; line-height:1.28;}
+    .constraints{font-size:.64rem; padding:5px 8px; margin-bottom:5px;}
+    .constraints div{margin-bottom:1px;}
+    .options{gap:2px;}
+    .opt{padding:3px 7px; font-size:.7rem;}
+    .answerDivider{margin:8px 0;}
+    .answerKey{padding:6px 10px; font-size:.72rem;}
+    .whyFailList{gap:2px; margin-top:4px;}
+    .whyFailItem{padding:3px 7px; font-size:.68rem;}
+    .notesWrap{margin-top:6px;}
+    .notesWrap h2{margin-bottom:3px;}
+    .notesBox{margin-top:3px; height:46px;}
   }
 </style>
 </head>
@@ -164,67 +165,6 @@ function updateUrl(examKey){
   window.history.replaceState(null, '', url);
 }
 
-// ---- Mermaid rationale diagram (mirrors index.html) ----
-function waitForMermaid(){
-  return new Promise(resolve => {
-    if(window.mermaid) return resolve(window.mermaid);
-    window.addEventListener('mermaid-ready', () => resolve(window.mermaid), { once: true });
-  });
-}
-function mermaidEscape(text){
-  return String(text)
-    .replace(/<[^>]*>/g, '')
-    .replace(/"/g, "'")
-    .replace(/[\r\n]+/g, ' ')
-    .trim();
-}
-function truncateText(text, max){
-  return text.length > max ? text.slice(0, max - 1).trimEnd() + '…' : text;
-}
-const OPTION_EMOJI = { A: '🅰️', B: '🅱️', C: '🅲', D: '🅳' };
-const STEP_EMOJI = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣'];
-function splitSentences(text){
-  const matches = String(text).match(/[^.!?]+[.!?]+(\s+|$)/g);
-  const sentences = (matches || [text]).map(s => s.trim()).filter(Boolean);
-  return sentences.length ? sentences : [text];
-}
-function buildRationaleDiagram(q){
-  const correctOpt = q.options.find(o => o.key === q.correct);
-  const optEmoji = OPTION_EMOJI[correctOpt.key] || '🔹';
-  const lines = ['flowchart TD'];
-  lines.push('  Q{{"🧠 ' + mermaidEscape(truncateText(q.question, 90)) + '"}}');
-  lines.push('  class Q qnode');
-  lines.push('  Q --> ANS["✅ ' + optEmoji + ' ' + correctOpt.key + '. ' + mermaidEscape(truncateText(correctOpt.text, 100)) + '"]');
-  lines.push('  class ANS correctNode');
-
-  let prevId = 'ANS';
-  splitSentences(q.correctReason).forEach((sentence, i) => {
-    const nodeId = 'R' + i;
-    const emoji = STEP_EMOJI[i] || '💡';
-    lines.push('  ' + prevId + ' --> ' + nodeId + '["' + emoji + ' ' + mermaidEscape(truncateText(sentence, 140)) + '"]');
-    lines.push('  class ' + nodeId + ' stepNode');
-    prevId = nodeId;
-  });
-
-  lines.push('  classDef qnode fill:#fdfcf9,stroke:#2f5d50,stroke-width:2px,color:#2f5d50,font-weight:bold;');
-  lines.push('  classDef correctNode fill:#e4ece8,stroke:#2f5d50,stroke-width:2px,color:#1c2321,font-weight:bold;');
-  lines.push('  classDef stepNode fill:#fdfcf9,stroke:#2f5d50,stroke-width:1px,color:#1c2321;');
-  return lines.join('\n');
-}
-let rationaleRenderSeq = 0;
-function renderRationaleSvg(q){
-  rationaleRenderSeq += 1;
-  const renderId = 'printRationaleSvg-' + rationaleRenderSeq;
-  const diagramSrc = buildRationaleDiagram(q);
-  return waitForMermaid()
-    .then(mermaid => mermaid.render(renderId, diagramSrc))
-    .then(({ svg }) => svg)
-    .catch(err => {
-      console.error('Mermaid render failed for', q.id, err);
-      return '<div class="rationaleLoading">⚠️ diagram failed to render</div>';
-    });
-}
-
 function optionHtml(o){
   return '<div class="opt"><b>' + o.key + '.</b> ' + o.text + '</div>';
 }
@@ -240,7 +180,7 @@ function answerHtml(q){
       '<div class="whyFailItem"><b>' + o.key + '.</b> Why it fails — ' + (q.whyFail && q.whyFail[o.key] ? q.whyFail[o.key] : '') + '</div>'
     ).join('') + '</div>';
   }
-  html += '<div class="rationaleWrap"><h2>🧭 Rationale map</h2><div class="rationaleSvgHolder" id="rationale-' + q.id + '"><div class="rationaleLoading">rendering diagram…</div></div></div>';
+  html += '<div class="notesWrap"><h2>Notes</h2><div class="notesBox"></div></div>';
   return html;
 }
 
@@ -276,18 +216,6 @@ async function loadExam(examKey){
   const questions = await res.json();
 
   questionsRoot.innerHTML = questions.map((q, i) => questionHtml(q, i, questions.length)).join('');
-  subtitle.textContent = exam.label + ' — ' + questions.length + ' questions — rendering rationale diagrams (0/' + questions.length + ')…';
-
-  let rendered = 0;
-  await Promise.all(questions.map(q =>
-    renderRationaleSvg(q).then(svg => {
-      const holder = document.getElementById('rationale-' + q.id);
-      if(holder) holder.innerHTML = svg;
-      rendered += 1;
-      subtitle.textContent = exam.label + ' — ' + questions.length + ' questions — rendering rationale diagrams (' + rendered + '/' + questions.length + ')…';
-    })
-  ));
-
   subtitle.textContent = exam.label + ' — ' + questions.length + ' questions — ready to print.';
   printBtn.disabled = false;
 }
