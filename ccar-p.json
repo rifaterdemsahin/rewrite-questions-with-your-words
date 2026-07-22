@@ -3,22 +3,7 @@
     "id": "sda-01",
     "created": "2026-07-22",
     "domain": "Solution Design & Architecture",
-    "scenario": "A retailer wants to automate responses to inbound supplier emails that arrive in a predictable format: acknowledge receipt, extract the PO number, look it up in an ERP, and reply with the current status. Volume is high and the task is well-bounded with a single happy path and a handful of known error branches.",
-    "constraints": [
-      {
-        "label": "Latency",
-        "text": "Median response under 3 seconds during business hours."
-      },
-      {
-        "label": "Cost",
-        "text": "Per-email cost must stay minimal at ~50k emails/day."
-      },
-      {
-        "label": "Predictability",
-        "text": "Behavior must be auditable and repeatable for compliance."
-      }
-    ],
-    "question": "Which architectural pattern best fits this workload?",
+    "question": "A retailer wants to automate responses to inbound supplier emails that arrive in a predictable format: acknowledge receipt, extract the PO number, look it up in an ERP, and reply with the current status. Volume is high and the task is well-bounded with a single happy path and a handful of known error branches. The design must keep the median response under 3 seconds during business hours, keep per-email cost minimal at roughly 50k emails/day, and keep behavior auditable and repeatable for compliance. Which architectural pattern best fits this workload?",
     "options": [
       {
         "key": "A",
@@ -49,22 +34,7 @@
     "id": "sda-02",
     "created": "2026-07-22",
     "domain": "Solution Design & Architecture",
-    "scenario": "A consultancy is scoping an internal 'knowledge assistant' that answers questions over 400k policy documents. Stakeholders keep proposing features. The lead wants to anchor the design in measurable business value before committing to architecture.",
-    "constraints": [
-      {
-        "label": "Value pillar",
-        "text": "The primary justification is analyst time saved (productivity)."
-      },
-      {
-        "label": "Budget",
-        "text": "Fixed pilot budget; must show ROI in one quarter."
-      },
-      {
-        "label": "Scope",
-        "text": "Must resist scope creep during discovery."
-      }
-    ],
-    "question": "What is the most defensible first step in translating this into a solution design?",
+    "question": "A consultancy is scoping an internal 'knowledge assistant' that will answer questions over 400k policy documents, and stakeholders keep proposing features before the lead has anchored the design in measurable business value. The primary justification must be analyst time saved (productivity), the fixed pilot budget must show ROI within one quarter, and the effort must resist scope creep during discovery. What is the most defensible first step in translating this into a solution design?",
     "options": [
       {
         "key": "A",
@@ -95,22 +65,7 @@
     "id": "sda-03",
     "created": "2026-07-22",
     "domain": "Solution Design & Architecture",
-    "scenario": "A logistics company needs an 'augmented LLM' assistant for dispatchers. It should answer questions, and when asked, call a routing-optimization service and a weather API. Most interactions are pure Q&A; tool calls are the exception.",
-    "constraints": [
-      {
-        "label": "Interaction mix",
-        "text": "~85% pure reasoning/Q&A, ~15% tool-assisted."
-      },
-      {
-        "label": "Reliability",
-        "text": "Tool calls must be observable and bounded."
-      },
-      {
-        "label": "Simplicity",
-        "text": "Avoid unnecessary orchestration complexity."
-      }
-    ],
-    "question": "Which design most appropriately matches the augmented-LLM pattern here?",
+    "question": "A logistics company needs an 'augmented LLM' assistant for dispatchers that answers questions directly and, when asked, calls a routing-optimization service and a weather API; about 85% of interactions are pure reasoning/Q&A and only about 15% are tool-assisted. Tool calls must stay observable and bounded, and the design should avoid unnecessary orchestration complexity. Which design most appropriately matches the augmented-LLM pattern here?",
     "options": [
       {
         "key": "A",
@@ -141,22 +96,7 @@
     "id": "sda-04",
     "created": "2026-07-22",
     "domain": "Solution Design & Architecture",
-    "scenario": "A bank is designing an end-to-end complaint-handling system: intake, classification, evidence retrieval, drafted resolution, and a feedback loop that captures whether the customer accepted the resolution. The team drew input->processing->output but omitted the feedback loop.",
-    "constraints": [
-      {
-        "label": "Continuous improvement",
-        "text": "The system must improve classification accuracy over time."
-      },
-      {
-        "label": "Auditability",
-        "text": "Outcomes must be traceable to inputs."
-      },
-      {
-        "label": "Governance",
-        "text": "Regulator expects evidence of monitoring."
-      }
-    ],
-    "question": "What is the most important addition to make this a complete end-to-end architecture?",
+    "question": "A bank is designing an end-to-end complaint-handling system covering intake, classification, evidence retrieval, and a drafted resolution, but the team's diagram only shows input -> processing -> output and omits any feedback loop capturing whether the customer accepted the resolution. The system must improve classification accuracy over time, keep outcomes traceable to inputs, and give the regulator evidence of ongoing monitoring. What is the most important addition to make this a complete end-to-end architecture?",
     "options": [
       {
         "key": "A",
@@ -187,22 +127,7 @@
     "id": "sda-05",
     "created": "2026-07-22",
     "domain": "Solution Design & Architecture",
-    "scenario": "A media firm wants a research assistant that produces multi-source briefings. Early tests with a single agent show it conflates sources and loses attribution when a topic spans many subtopics. Leadership asks whether to decompose.",
-    "constraints": [
-      {
-        "label": "Coverage",
-        "text": "Briefings must cover all major subtopics of a broad query."
-      },
-      {
-        "label": "Attribution",
-        "text": "Every claim must map to a source."
-      },
-      {
-        "label": "Controllability",
-        "text": "Failures must be isolatable to a stage."
-      }
-    ],
-    "question": "Which decomposition strategy best addresses the observed failure?",
+    "question": "A media firm wants a research assistant that produces multi-source briefings, but early tests with a single agent show it conflates sources and loses attribution when a topic spans many subtopics, prompting leadership to ask whether to decompose the task. Briefings must cover all major subtopics of a broad query, every claim must map to a source, and failures must be isolatable to a specific stage. Which decomposition strategy best addresses the observed failure?",
     "options": [
       {
         "key": "A",
@@ -233,22 +158,7 @@
     "id": "sda-06",
     "created": "2026-07-22",
     "domain": "Solution Design & Architecture",
-    "scenario": "A SaaS vendor must choose between a workflow and an agentic design for a 'contract review' feature. Contracts vary widely; the needed steps depend on clauses discovered mid-review, and reviewers cannot predict the path in advance.",
-    "constraints": [
-      {
-        "label": "Adaptivity",
-        "text": "Steps depend on what is found during review."
-      },
-      {
-        "label": "Depth",
-        "text": "Must follow cross-references discovered dynamically."
-      },
-      {
-        "label": "Quality",
-        "text": "Missing a discovered dependency is a serious defect."
-      }
-    ],
-    "question": "Which pattern is the better fit and why?",
+    "question": "A SaaS vendor must choose between a workflow and an agentic design for a 'contract review' feature. Contracts vary widely, the needed steps depend on clauses discovered mid-review, reviewers cannot predict the path in advance, and missing a dependency that's discovered mid-review would be a serious defect. Which pattern is the better fit, and why?",
     "options": [
       {
         "key": "A",
@@ -279,22 +189,7 @@
     "id": "sda-07",
     "created": "2026-07-22",
     "domain": "Solution Design & Architecture",
-    "scenario": "An insurer's leadership frames a project purely as 'add AI to claims.' The architect must reframe it against business value pillars to prioritize which subsystem to build first, given three candidate subsystems: fraud triage (risk reduction), FNOL intake automation (efficiency), and adjuster copilot (productivity).",
-    "constraints": [
-      {
-        "label": "Prioritization",
-        "text": "Only one subsystem can be funded first."
-      },
-      {
-        "label": "Measurability",
-        "text": "The first build must have a clear, attributable metric."
-      },
-      {
-        "label": "Executive framing",
-        "text": "Must be defensible to a non-technical board."
-      }
-    ],
-    "question": "What is the soundest basis for choosing which to build first?",
+    "question": "An insurer's leadership frames a new initiative purely as 'add AI to claims,' and the architect must reframe it against business value pillars to prioritize which of three candidate subsystems to build first: fraud triage (risk reduction), FNOL intake automation (efficiency), or an adjuster copilot (productivity). Only one subsystem can be funded first, it must have a clear and attributable metric, and the choice must be defensible to a non-technical board. What is the soundest basis for choosing which to build first?",
     "options": [
       {
         "key": "A",
@@ -325,22 +220,7 @@
     "id": "sda-08",
     "created": "2026-07-22",
     "domain": "Solution Design & Architecture",
-    "scenario": "A healthcare startup designs a triage assistant. The architect proposes a multi-agent system: one agent gathers symptoms, one retrieves guidelines, one drafts advice. A reviewer warns that inter-agent communication is happening peer-to-peer with no central control.",
-    "constraints": [
-      {
-        "label": "Observability",
-        "text": "Every decision must be traceable centrally."
-      },
-      {
-        "label": "Error handling",
-        "text": "Failures must be caught and routed consistently."
-      },
-      {
-        "label": "Safety",
-        "text": "Clinical advice must pass a single controlled gate."
-      }
-    ],
-    "question": "Which orchestration change best addresses the reviewer's concern?",
+    "question": "A healthcare startup's architect proposes a multi-agent triage assistant: one agent gathers symptoms, one retrieves guidelines, one drafts advice — but a reviewer warns that the agents are communicating peer-to-peer with no central control. Every decision must be traceable centrally, failures must be caught and routed consistently, and clinical advice must pass a single controlled safety gate. Which orchestration change best addresses the reviewer's concern?",
     "options": [
       {
         "key": "A",
@@ -371,22 +251,7 @@
     "id": "sda-09",
     "created": "2026-07-22",
     "domain": "Solution Design & Architecture",
-    "scenario": "A firm needs an assistant that answers 'how many' and 'what is the trend' questions over a structured warehouse plus 'why did X happen' questions over unstructured incident reports. A single retrieval approach performs poorly on one of the two.",
-    "constraints": [
-      {
-        "label": "Query shapes",
-        "text": "Two distinct query classes: analytical/aggregate and explanatory/semantic."
-      },
-      {
-        "label": "Accuracy",
-        "text": "Each class must be answered by the mechanism suited to it."
-      },
-      {
-        "label": "Maintainability",
-        "text": "Avoid one brittle mechanism forced to do both."
-      }
-    ],
-    "question": "What is the best solution-design response?",
+    "question": "A firm needs an assistant that answers 'how many' and 'what is the trend' questions over a structured data warehouse, as well as 'why did X happen' questions over unstructured incident reports, but a single retrieval approach performs poorly on one of the two query types. Each of these two distinct query classes — analytical/aggregate and explanatory/semantic — must be answered by the mechanism suited to it, without forcing one brittle mechanism to do both. What is the best solution-design response?",
     "options": [
       {
         "key": "A",
@@ -417,22 +282,7 @@
     "id": "sda-10",
     "created": "2026-07-22",
     "domain": "Solution Design & Architecture",
-    "scenario": "An architect is asked to design a system where cost and latency SLAs are explicit business commitments in a customer contract, not just engineering preferences. The proposed design uses the largest model for every step including trivial formatting.",
-    "constraints": [
-      {
-        "label": "SLA",
-        "text": "Contractual p95 latency of 4s and a per-transaction cost ceiling."
-      },
-      {
-        "label": "Quality floor",
-        "text": "Complex reasoning steps must still meet an accuracy bar."
-      },
-      {
-        "label": "Contractual risk",
-        "text": "Breaching SLA has financial penalties."
-      }
-    ],
-    "question": "How should the architecture be revised to align with the business commitments?",
+    "question": "An architect is asked to design a system where a contractual p95 latency of 4 seconds and a per-transaction cost ceiling are explicit business commitments with financial penalties for breach, not just engineering preferences — yet the proposed design uses the largest available model for every step, including trivial formatting. Complex reasoning steps must still meet an accuracy bar even as cost and latency are brought under control. How should the architecture be revised to align with the business commitments?",
     "options": [
       {
         "key": "A",
@@ -463,22 +313,7 @@
     "id": "mpc-01",
     "created": "2026-07-22",
     "domain": "Claude Models, Prompting & Context Engineering",
-    "scenario": "An application sends an identical 12,000-token system prompt plus a policy manual on every request, followed by a short varying user question. Both latency and per-request cost are flagged as problems.",
-    "constraints": [
-      {
-        "label": "Static prefix",
-        "text": "The 12k-token prefix is identical across requests."
-      },
-      {
-        "label": "Latency",
-        "text": "Time-to-first-token must drop."
-      },
-      {
-        "label": "Cost",
-        "text": "Per-request cost must drop without losing policy content."
-      }
-    ],
-    "question": "Which optimization most directly addresses both latency and cost?",
+    "question": "An application sends an identical 12,000-token system prompt plus a policy manual on every request, followed by a short varying user question, and both latency and per-request cost have been flagged as problems. Time-to-first-token must drop and per-request cost must drop without losing any policy content. Which optimization most directly addresses both latency and cost?",
     "options": [
       {
         "key": "A",
@@ -509,22 +344,7 @@
     "id": "mpc-02",
     "created": "2026-07-22",
     "domain": "Claude Models, Prompting & Context Engineering",
-    "scenario": "A team must select a Claude model for a pipeline with two very different stages: (1) high-volume intent classification of short messages, and (2) low-volume, deep multi-document legal analysis. They currently use one model for both.",
-    "constraints": [
-      {
-        "label": "Stage 1",
-        "text": "Millions of short classifications daily; cost-sensitive."
-      },
-      {
-        "label": "Stage 2",
-        "text": "Hundreds of complex analyses daily; accuracy-critical."
-      },
-      {
-        "label": "Trade-off",
-        "text": "Match capability to task rather than one-size-fits-all."
-      }
-    ],
-    "question": "What is the best model-selection strategy?",
+    "question": "A team must select a Claude model for a pipeline with two very different stages — millions of short, cost-sensitive intent classifications daily, and hundreds of low-volume, accuracy-critical multi-document legal analyses daily — but currently uses one model for both, and wants to match capability to task rather than use a one-size-fits-all model. What is the best model-selection strategy?",
     "options": [
       {
         "key": "A",
@@ -555,22 +375,7 @@
     "id": "mpc-03",
     "created": "2026-07-22",
     "domain": "Claude Models, Prompting & Context Engineering",
-    "scenario": "A prompt asks the model to solve multi-step quantitative reasoning problems and go straight to a final number. Accuracy on multi-step items is poor, with arithmetic slips. The team wants a prompting fix before changing models.",
-    "constraints": [
-      {
-        "label": "Task",
-        "text": "Multi-step quantitative reasoning."
-      },
-      {
-        "label": "Failure",
-        "text": "Errors accumulate when jumping to the answer."
-      },
-      {
-        "label": "Constraint",
-        "text": "Prefer a prompt-level fix first."
-      }
-    ],
-    "question": "Which prompt-engineering technique most directly targets this failure?",
+    "question": "A prompt asks the model to solve multi-step quantitative reasoning problems and go straight to a final number, but accuracy on multi-step items is poor because errors accumulate when the model jumps straight to the answer, and the team wants a prompt-level fix before considering a model change. Which prompt-engineering technique most directly targets this failure?",
     "options": [
       {
         "key": "A",
@@ -601,22 +406,7 @@
     "id": "mpc-04",
     "created": "2026-07-22",
     "domain": "Claude Models, Prompting & Context Engineering",
-    "scenario": "A support bot must never reveal internal pricing logic, must refuse out-of-scope legal questions, and must keep a consistent brand voice. The current single-paragraph prompt mixes all rules together and behavior is inconsistent.",
-    "constraints": [
-      {
-        "label": "Guardrails",
-        "text": "Hard rules (no internal pricing, refuse legal) must hold reliably."
-      },
-      {
-        "label": "Voice",
-        "text": "Consistent tone across turns."
-      },
-      {
-        "label": "Maintainability",
-        "text": "Rules should be individually editable."
-      }
-    ],
-    "question": "What is the most effective prompt/context-engineering improvement?",
+    "question": "A support bot must never reveal internal pricing logic, must refuse out-of-scope legal questions, and must keep a consistent brand voice — but its current single-paragraph prompt mixes all of these rules together, the hard guardrails don't hold reliably, and behavior is inconsistent. The rules also need to stay individually editable. What is the most effective prompt/context-engineering improvement?",
     "options": [
       {
         "key": "A",
@@ -647,22 +437,7 @@
     "id": "mpc-05",
     "created": "2026-07-22",
     "domain": "Claude Models, Prompting & Context Engineering",
-    "scenario": "A document assistant repeatedly reuses several stable instruction blocks (extraction rules, formatting rules, tone rules) recombined per task type. Copy-pasting them into each prompt has led to drift where blocks diverge across prompts.",
-    "constraints": [
-      {
-        "label": "Reuse",
-        "text": "The same instruction blocks recur across many prompt variants."
-      },
-      {
-        "label": "Consistency",
-        "text": "Blocks must stay identical wherever used."
-      },
-      {
-        "label": "Scale",
-        "text": "Dozens of task-specific prompts."
-      }
-    ],
-    "question": "Which prompt-reuse strategy best prevents drift?",
+    "question": "A document assistant repeatedly reuses several stable instruction blocks — extraction rules, formatting rules, tone rules — recombined per task type across dozens of task-specific prompts, but copy-pasting them into each prompt has led to drift where the blocks diverge across prompts and need to stay identical wherever they're used. Which prompt-reuse strategy best prevents this drift?",
     "options": [
       {
         "key": "A",
@@ -693,22 +468,7 @@
     "id": "mpc-06",
     "created": "2026-07-22",
     "domain": "Claude Models, Prompting & Context Engineering",
-    "scenario": "A long-running assistant accumulates tool outputs (each order lookup returns 40+ fields, only ~5 relevant) across a lengthy conversation. Token usage balloons and later answers start missing details buried mid-context.",
-    "constraints": [
-      {
-        "label": "Token budget",
-        "text": "Verbose tool results dominate the window."
-      },
-      {
-        "label": "Position effect",
-        "text": "Middle-of-context details get lost."
-      },
-      {
-        "label": "Fidelity",
-        "text": "Key transactional facts must persist."
-      }
-    ],
-    "question": "Which combination best manages context here?",
+    "question": "A long-running assistant accumulates tool outputs across a lengthy conversation — each order lookup returns 40+ fields, of which only about 5 are relevant — and token usage balloons while later answers start missing details buried in the middle of the context. Key transactional facts must persist reliably despite this. Which combination of changes best manages context here?",
     "options": [
       {
         "key": "A",
@@ -739,22 +499,7 @@
     "id": "mpc-07",
     "created": "2026-07-22",
     "domain": "Claude Models, Prompting & Context Engineering",
-    "scenario": "For an extraction task, a team writes a detailed prose description of the desired output but gets inconsistent formatting across documents with varied layouts (inline citations vs bibliographies, tables vs narrative).",
-    "constraints": [
-      {
-        "label": "Variety",
-        "text": "Source documents have structurally different layouts."
-      },
-      {
-        "label": "Consistency",
-        "text": "Output format must be uniform."
-      },
-      {
-        "label": "Prose limits",
-        "text": "Long prose instructions are interpreted inconsistently."
-      }
-    ],
-    "question": "Which technique most reliably improves consistency across the varied inputs?",
+    "question": "For an extraction task, a team writes a detailed prose description of the desired output but gets inconsistent formatting across documents with structurally different layouts (inline citations vs. bibliographies, tables vs. narrative), even though the output format must be uniform. Which technique most reliably improves consistency across the varied inputs?",
     "options": [
       {
         "key": "A",
@@ -785,22 +530,7 @@
     "id": "mpc-08",
     "created": "2026-07-22",
     "domain": "Claude Models, Prompting & Context Engineering",
-    "scenario": "A team is deciding how to guide model behavior for a task that is mostly stable but has a few genuinely ambiguous edge cases (e.g., which of two categories an unusual record belongs to). Zero-shot performance is fine on common cases but erratic on the ambiguous ones.",
-    "constraints": [
-      {
-        "label": "Common cases",
-        "text": "Zero-shot is already adequate."
-      },
-      {
-        "label": "Edge cases",
-        "text": "Ambiguous records are handled inconsistently."
-      },
-      {
-        "label": "Efficiency",
-        "text": "Do not bloat the prompt unnecessarily."
-      }
-    ],
-    "question": "What is the most proportionate prompting improvement?",
+    "question": "A team is deciding how to guide model behavior for a task that is mostly stable but has a few genuinely ambiguous edge cases, such as which of two categories an unusual record belongs to; zero-shot performance is already adequate on the common cases but erratic on the ambiguous ones, and the team doesn't want to bloat the prompt unnecessarily. What is the most proportionate prompting improvement?",
     "options": [
       {
         "key": "A",
@@ -831,22 +561,7 @@
     "id": "int-01",
     "created": "2026-07-22",
     "domain": "Integration",
-    "scenario": "A customer-support agent is configured with tools to read tickets, draft replies, issue refunds, and delete user accounts. The support role only ever needs to read tickets and draft replies. A security review flags excessive capability.",
-    "constraints": [
-      {
-        "label": "Least privilege",
-        "text": "The role should hold only the capabilities it needs."
-      },
-      {
-        "label": "Blast radius",
-        "text": "High-impact actions (refund, delete) must not be reachable by this role."
-      },
-      {
-        "label": "Auditability",
-        "text": "Simplicity preferred over compensating monitoring."
-      }
-    ],
-    "question": "Applying least-privilege principles, which change best reduces risk?",
+    "question": "A customer-support agent is configured with tools to read tickets, draft replies, issue refunds, and delete user accounts, even though the support role only ever needs to read tickets and draft replies — and a security review has flagged the excess capability, preferring outright removal over compensating monitoring for high-impact actions like refunds and deletions. Applying least-privilege principles, which change best reduces risk?",
     "options": [
       {
         "key": "A",
@@ -877,22 +592,7 @@
     "id": "int-02",
     "created": "2026-07-22",
     "domain": "Integration",
-    "scenario": "An agent has grown to 18 tools with overlapping purposes. Tool-selection reliability has dropped noticeably: it frequently picks the wrong tool among near-duplicates like analyze_content and analyze_document.",
-    "constraints": [
-      {
-        "label": "Selection reliability",
-        "text": "Wrong-tool selection has increased with tool count."
-      },
-      {
-        "label": "Overlap",
-        "text": "Several tools have near-identical descriptions."
-      },
-      {
-        "label": "Capability bloat",
-        "text": "Decision complexity is too high."
-      }
-    ],
-    "question": "What is the most effective remediation?",
+    "question": "An agent has grown to 18 tools with overlapping purposes, and tool-selection reliability has dropped noticeably: it frequently picks the wrong tool among near-duplicates like analyze_content and analyze_document, since several tools have near-identical descriptions and the decision space has become too complex. What is the most effective remediation?",
     "options": [
       {
         "key": "A",
@@ -923,22 +623,7 @@
     "id": "int-03",
     "created": "2026-07-22",
     "domain": "Integration",
-    "scenario": "A team integrating Claude with an internal ticketing backend debates the connection mechanism. The backend is a long-lived service that many agents and Claude Code users will reuse, and they want tools/resources discoverable and standardized across teams.",
-    "constraints": [
-      {
-        "label": "Reuse",
-        "text": "Many agents/users share the same backend."
-      },
-      {
-        "label": "Standardization",
-        "text": "Tools and resources should be discoverable consistently."
-      },
-      {
-        "label": "Maintenance",
-        "text": "Avoid bespoke per-consumer glue code."
-      }
-    ],
-    "question": "Which integration mechanism best fits?",
+    "question": "A team integrating Claude with an internal ticketing backend debates the connection mechanism, since the backend is a long-lived service that many agents and Claude Code users will reuse and they want its tools and resources to be discoverable and standardized across teams without bespoke per-consumer glue code. Which integration mechanism best fits?",
     "options": [
       {
         "key": "A",
@@ -969,22 +654,7 @@
     "id": "int-04",
     "created": "2026-07-22",
     "domain": "Integration",
-    "scenario": "A RAG system over long technical manuals splits documents into fixed 2,000-token chunks with no overlap and no structure awareness. Users complain answers cut off mid-procedure and miss steps that straddle chunk boundaries.",
-    "constraints": [
-      {
-        "label": "Boundary loss",
-        "text": "Procedures split across chunks lose steps."
-      },
-      {
-        "label": "Structure",
-        "text": "Manuals have clear section/procedure boundaries."
-      },
-      {
-        "label": "Recall",
-        "text": "Retrieved context must contain complete procedures."
-      }
-    ],
-    "question": "Which chunking change best addresses the boundary problem?",
+    "question": "A RAG system over long technical manuals splits documents into fixed 2,000-token chunks with no overlap and no structure awareness, and users complain that answers cut off mid-procedure and miss steps that straddle chunk boundaries — even though the manuals have clear section/procedure boundaries and retrieved context needs to contain complete procedures. Which chunking change best addresses the boundary problem?",
     "options": [
       {
         "key": "A",
@@ -1015,22 +685,7 @@
     "id": "int-05",
     "created": "2026-07-22",
     "domain": "Integration",
-    "scenario": "A support agent integrates three MCP tools that each return timestamps differently (Unix epoch, ISO 8601, and a numeric status code) plus inconsistent field names. The model frequently mishandles these heterogeneous formats when reasoning.",
-    "constraints": [
-      {
-        "label": "Heterogeneity",
-        "text": "Tools return inconsistent formats/units."
-      },
-      {
-        "label": "Determinism",
-        "text": "Normalization must be guaranteed, not hoped for."
-      },
-      {
-        "label": "Separation",
-        "text": "Keep the model focused on reasoning, not format wrangling."
-      }
-    ],
-    "question": "What is the most robust integration fix?",
+    "question": "A support agent integrates three MCP tools that each return timestamps differently — Unix epoch, ISO 8601, and a numeric status code — plus inconsistent field names, and the model frequently mishandles these heterogeneous formats when reasoning. Normalization needs to be guaranteed rather than hoped for, keeping the model focused on reasoning instead of format wrangling. What is the most robust integration fix?",
     "options": [
       {
         "key": "A",
@@ -1061,22 +716,7 @@
     "id": "int-06",
     "created": "2026-07-22",
     "domain": "Integration",
-    "scenario": "An architect must justify a configuration decision: a fraud-check step can call a fast approximate model (200ms, 92% accuracy) or a slower thorough one (1.5s, 98% accuracy). The step gates whether a transaction proceeds and false negatives are costly.",
-    "constraints": [
-      {
-        "label": "Accuracy-latency",
-        "text": "Two options trade speed against accuracy."
-      },
-      {
-        "label": "Cost of error",
-        "text": "Missed fraud (false negative) is very expensive."
-      },
-      {
-        "label": "SLA",
-        "text": "The overall flow has some latency headroom at this step."
-      }
-    ],
-    "question": "Which justification-driven configuration is soundest?",
+    "question": "An architect must justify a configuration decision for a fraud-check step that gates whether a transaction proceeds: it can call a fast approximate model (200ms, 92% accuracy) or a slower, thorough one (1.5s, 98% accuracy), false negatives at this step are very costly, and the overall flow has some latency headroom to spare at this step. Which justification-driven configuration is soundest?",
     "options": [
       {
         "key": "A",
@@ -1107,22 +747,7 @@
     "id": "int-07",
     "created": "2026-07-22",
     "domain": "Integration",
-    "scenario": "At scale (thousands of agent runs/hour across many tools and subagents), the team cannot tell where failures or latency originate. Errors surface only as generic end-user messages, and there is no request-level correlation.",
-    "constraints": [
-      {
-        "label": "Scale",
-        "text": "Thousands of runs/hour, many tools/subagents."
-      },
-      {
-        "label": "Diagnosability",
-        "text": "Must localize failures and latency to a component."
-      },
-      {
-        "label": "Correlation",
-        "text": "Need to trace a single request end-to-end."
-      }
-    ],
-    "question": "Which observability strategy best fits scale?",
+    "question": "At scale — thousands of agent runs per hour across many tools and subagents — a team cannot tell where failures or latency originate, since errors surface only as generic end-user messages and there's no way to correlate or trace a single request end-to-end across components. Which observability strategy best fits this scale?",
     "options": [
       {
         "key": "A",
@@ -1153,22 +778,7 @@
     "id": "int-08",
     "created": "2026-07-22",
     "domain": "Integration",
-    "scenario": "A knowledge assistant currently front-loads a giant static context bundle (all schemas, all doc catalogs, all tool manuals) into every request 'so the model has everything.' Costs are high and irrelevant context sometimes distracts the model.",
-    "constraints": [
-      {
-        "label": "Token cost",
-        "text": "Monolithic context is expensive per request."
-      },
-      {
-        "label": "Relevance",
-        "text": "Most bundled context is unused per query."
-      },
-      {
-        "label": "Discovery",
-        "text": "The model needs a way to fetch only what a query requires."
-      }
-    ],
-    "question": "Which strategy better balances capability and efficiency?",
+    "question": "A knowledge assistant currently front-loads a giant static context bundle — all schemas, all doc catalogs, all tool manuals — into every request 'so the model has everything,' driving up costs, even though most of that bundled context is unused per query and sometimes distracts the model; the model still needs a way to fetch only what a given query actually requires. Which strategy better balances capability and efficiency?",
     "options": [
       {
         "key": "A",
@@ -1199,22 +809,7 @@
     "id": "int-09",
     "created": "2026-07-22",
     "domain": "Integration",
-    "scenario": "A RAG deployment retrieves by dense vector similarity only. It excels at fuzzy semantic questions but fails on queries needing exact identifiers, product codes, and rare acronyms, which similarity search overlooks.",
-    "constraints": [
-      {
-        "label": "Query mix",
-        "text": "Both semantic questions and exact-token lookups occur."
-      },
-      {
-        "label": "Exact match",
-        "text": "Identifiers/codes must be retrievable precisely."
-      },
-      {
-        "label": "Recall",
-        "text": "Neither query type should be starved."
-      }
-    ],
-    "question": "Which retrieval strategy best matches this data/query shape?",
+    "question": "A RAG deployment retrieves by dense vector similarity only, and while it excels at fuzzy semantic questions, it fails on queries needing exact identifiers, product codes, and rare acronyms that similarity search overlooks — even though both query types occur regularly and neither should be starved of good recall. Which retrieval strategy best matches this data/query shape?",
     "options": [
       {
         "key": "A",
@@ -1245,22 +840,7 @@
     "id": "int-10",
     "created": "2026-07-22",
     "domain": "Integration",
-    "scenario": "Two autonomous systems need to cooperate: an internal research agent must request analyses from a partner org's agent, which exposes a standardized agent interface. The teams want a protocol-level way for the agents to interoperate rather than custom point integrations.",
-    "constraints": [
-      {
-        "label": "Interop",
-        "text": "Two independently-built agents must collaborate."
-      },
-      {
-        "label": "Boundary",
-        "text": "They belong to different orgs/systems."
-      },
-      {
-        "label": "Standardization",
-        "text": "Prefer a defined agent-to-agent mechanism over bespoke glue."
-      }
-    ],
-    "question": "Which integration mechanism is most appropriate?",
+    "question": "Two independently-built, autonomous systems need to cooperate across an organizational boundary: an internal research agent must request analyses from a partner org's agent, which exposes a standardized agent interface, and the teams want a protocol-level way for the agents to interoperate rather than a custom point integration. Which integration mechanism is most appropriate?",
     "options": [
       {
         "key": "A",
@@ -1291,22 +871,7 @@
     "id": "int-11",
     "created": "2026-07-22",
     "domain": "Integration",
-    "scenario": "An agent authenticates to several backend tools using a single shared service account with broad write scopes, and the same token is reused whether the request originated from an admin or a read-only end user. A security review flags authorization gaps.",
-    "constraints": [
-      {
-        "label": "Authorization",
-        "text": "End-user permissions are not reflected in tool calls."
-      },
-      {
-        "label": "Scope",
-        "text": "The shared account has more scope than most requests need."
-      },
-      {
-        "label": "Least privilege",
-        "text": "Actions must be bounded by the requester's rights."
-      }
-    ],
-    "question": "Which change best closes the authorization gap?",
+    "question": "An agent authenticates to several backend tools using a single shared service account with broad write scopes, and the same token is reused whether the request originated from an admin or a read-only end user — a security review has flagged that end-user permissions aren't reflected in tool calls, and that actions must be bounded by the requester's actual rights. Which change best closes the authorization gap?",
     "options": [
       {
         "key": "A",
@@ -1337,22 +902,7 @@
     "id": "eto-01",
     "created": "2026-07-22",
     "domain": "Evaluation, Testing & Optimization",
-    "scenario": "A RAG system that was accurate for months suddenly returns confident but incorrect answers immediately after a scheduled document refresh. Latency and the model version are unchanged.",
-    "constraints": [
-      {
-        "label": "Trigger",
-        "text": "Failure began exactly at a document refresh."
-      },
-      {
-        "label": "Unchanged",
-        "text": "Latency and model version did not change."
-      },
-      {
-        "label": "Symptom",
-        "text": "Confident but wrong answers."
-      }
-    ],
-    "question": "What is the most likely first place to investigate?",
+    "question": "A RAG system that had been accurate for months suddenly starts returning confident but incorrect answers immediately after a scheduled document refresh, even though latency and the model version are unchanged. What is the most likely first place to investigate?",
     "options": [
       {
         "key": "A",
@@ -1383,22 +933,7 @@
     "id": "eto-02",
     "created": "2026-07-22",
     "domain": "Evaluation, Testing & Optimization",
-    "scenario": "A team reports 97% overall extraction accuracy and wants to automate away human review. A reviewer worries the aggregate could mask poor performance on specific document types or fields.",
-    "constraints": [
-      {
-        "label": "Aggregate risk",
-        "text": "97% overall may hide segment failures."
-      },
-      {
-        "label": "Segments",
-        "text": "Multiple document types and fields exist."
-      },
-      {
-        "label": "Safety",
-        "text": "Automating a weak segment could be costly."
-      }
-    ],
-    "question": "Which evaluation approach best validates readiness to reduce human review?",
+    "question": "A team reports 97% overall extraction accuracy across multiple document types and fields and wants to automate away human review, but a reviewer worries the aggregate figure could be masking poor performance on specific segments, and that automating a weak segment could be costly. Which evaluation approach best validates readiness to reduce human review?",
     "options": [
       {
         "key": "A",
@@ -1429,22 +964,7 @@
     "id": "eto-03",
     "created": "2026-07-22",
     "domain": "Evaluation, Testing & Optimization",
-    "scenario": "A code-review assistant produces many false positives on minor style nits, eroding developer trust so much that its accurate security findings are ignored too. The team wants to restore trust while improving.",
-    "constraints": [
-      {
-        "label": "False positives",
-        "text": "High FP rate on low-value style nits."
-      },
-      {
-        "label": "Trust spillover",
-        "text": "FP noise undermines the valuable categories."
-      },
-      {
-        "label": "Recovery",
-        "text": "Need a path to restore confidence."
-      }
-    ],
-    "question": "What is the most effective combined response?",
+    "question": "A code-review assistant produces many false positives on minor style nits, and that noise has eroded developer trust so badly that its accurate security findings get ignored too; the team needs a way to restore trust in the useful categories while it improves the noisy ones. What is the most effective combined response?",
     "options": [
       {
         "key": "A",
@@ -1475,22 +995,7 @@
     "id": "eto-04",
     "created": "2026-07-22",
     "domain": "Evaluation, Testing & Optimization",
-    "scenario": "A team wants to know whether a new prompt genuinely improves answer quality over the current one, or whether observed gains are noise. They currently 'eyeball a few outputs' after each change.",
-    "constraints": [
-      {
-        "label": "Rigor",
-        "text": "Need statistically meaningful comparison, not vibes."
-      },
-      {
-        "label": "Fairness",
-        "text": "Both prompts must see comparable inputs."
-      },
-      {
-        "label": "Metric",
-        "text": "Quality must be measurable."
-      }
-    ],
-    "question": "Which evaluation method best supports the decision?",
+    "question": "A team wants to know whether a new prompt genuinely improves answer quality over the current one, or whether the observed gains are just noise, but currently they only 'eyeball a few outputs' after each change — they need a statistically meaningful, fair comparison against a measurable quality metric. Which evaluation method best supports the decision?",
     "options": [
       {
         "key": "A",
@@ -1521,22 +1026,7 @@
     "id": "eto-05",
     "created": "2026-07-22",
     "domain": "Evaluation, Testing & Optimization",
-    "scenario": "An assistant occasionally fabricates plausible but unsupported facts (hallucinations) when the retrieved context lacks the answer. The team must decide where to intervene.",
-    "constraints": [
-      {
-        "label": "Root cause",
-        "text": "Fabrication occurs when context lacks the answer."
-      },
-      {
-        "label": "Trust",
-        "text": "Unsupported claims are unacceptable."
-      },
-      {
-        "label": "Diagnosis",
-        "text": "Distinguish missing-context from model error."
-      }
-    ],
-    "question": "What is the most appropriate first diagnostic/mitigation step?",
+    "question": "An assistant occasionally fabricates plausible but unsupported facts when the retrieved context lacks the answer, and the team must decide where to intervene, distinguishing cases where context is genuinely missing from cases of plain model error, since unsupported claims are unacceptable. What is the most appropriate first diagnostic/mitigation step?",
     "options": [
       {
         "key": "A",
@@ -1567,22 +1057,7 @@
     "id": "eto-06",
     "created": "2026-07-22",
     "domain": "Evaluation, Testing & Optimization",
-    "scenario": "A pipeline's cost is dominated by re-sending an identical large instruction+reference prefix on every one of millions of daily requests. Accuracy is fine; the goal is cost/latency optimization without quality loss.",
-    "constraints": [
-      {
-        "label": "Repetition",
-        "text": "A large prefix is identical across requests."
-      },
-      {
-        "label": "Quality",
-        "text": "No degradation of accuracy allowed."
-      },
-      {
-        "label": "Volume",
-        "text": "Millions of requests per day."
-      }
-    ],
-    "question": "Which optimization most directly reduces cost and latency here?",
+    "question": "A pipeline's cost is dominated by re-sending an identical large instruction-plus-reference prefix on every one of millions of daily requests; accuracy is already fine, and the goal is to optimize cost and latency without any quality loss. Which optimization most directly reduces cost and latency here?",
     "options": [
       {
         "key": "A",
@@ -1613,22 +1088,7 @@
     "id": "eto-07",
     "created": "2026-07-22",
     "domain": "Evaluation, Testing & Optimization",
-    "scenario": "A single-pass review of a 14-file pull request gives inconsistent depth: detailed on some files, superficial on others, misses obvious bugs, and even contradicts itself (flags a pattern in one file, approves identical code in another).",
-    "constraints": [
-      {
-        "label": "Attention dilution",
-        "text": "Quality degrades across many files at once."
-      },
-      {
-        "label": "Consistency",
-        "text": "Identical code should be judged identically."
-      },
-      {
-        "label": "Cross-file",
-        "text": "Some issues span files."
-      }
-    ],
-    "question": "How should the review be restructured?",
+    "question": "A single-pass review of a 14-file pull request gives inconsistent depth — detailed on some files, superficial on others — misses obvious bugs, and even contradicts itself by flagging a pattern in one file while approving identical code in another, even though identical code should be judged identically and some issues genuinely span multiple files. How should the review be restructured?",
     "options": [
       {
         "key": "A",
@@ -1659,22 +1119,7 @@
     "id": "eto-08",
     "created": "2026-07-22",
     "domain": "Evaluation, Testing & Optimization",
-    "scenario": "A team must define success metrics for a new customer-facing assistant before launch. So far they only track 'accuracy.' Leadership also cares about responsiveness, spend, and unsafe outputs.",
-    "constraints": [
-      {
-        "label": "Multi-metric",
-        "text": "Quality, latency, cost, and safety all matter."
-      },
-      {
-        "label": "Actionability",
-        "text": "Metrics must guide operational decisions."
-      },
-      {
-        "label": "Pre-launch",
-        "text": "Baselines needed before go-live."
-      }
-    ],
-    "question": "Which metric definition approach is most complete?",
+    "question": "A team must define success metrics for a new customer-facing assistant before launch, but so far only tracks 'accuracy,' even though leadership also cares about responsiveness, spend, and unsafe outputs, and baselines are needed before go-live so the metrics can actually guide operational decisions. Which metric definition approach is most complete?",
     "options": [
       {
         "key": "A",
@@ -1705,22 +1150,7 @@
     "id": "eto-09",
     "created": "2026-07-22",
     "domain": "Evaluation, Testing & Optimization",
-    "scenario": "An extraction system's validation fails when the model returns totals that do not equal the sum of line items, and when values land in the wrong fields. The team uses tool_use with a strict JSON schema and assumes that guarantees correctness.",
-    "constraints": [
-      {
-        "label": "Schema strictness",
-        "text": "Tool_use guarantees valid JSON syntax."
-      },
-      {
-        "label": "Semantic errors",
-        "text": "Values can still be internally inconsistent."
-      },
-      {
-        "label": "Quality",
-        "text": "Downstream systems require semantic correctness."
-      }
-    ],
-    "question": "What is the correct understanding and remedy?",
+    "question": "An extraction system's validation fails when the model returns totals that don't equal the sum of line items, and when values land in the wrong fields, even though the team uses tool_use with a strict JSON schema and had assumed that guaranteed correctness — downstream systems require the values to be semantically correct, not just syntactically valid. What is the correct understanding and remedy?",
     "options": [
       {
         "key": "A",
@@ -1751,22 +1181,7 @@
     "id": "eto-10",
     "created": "2026-07-22",
     "domain": "Evaluation, Testing & Optimization",
-    "scenario": "Post-launch, an assistant's quality slowly drifts: answers get worse over weeks though nothing was deployed. The team has no ongoing measurement and only notices when complaints spike.",
-    "constraints": [
-      {
-        "label": "Drift",
-        "text": "Silent degradation over time with no deploys."
-      },
-      {
-        "label": "Detection lag",
-        "text": "Problems surface only via complaints."
-      },
-      {
-        "label": "Operations",
-        "text": "Need proactive detection."
-      }
-    ],
-    "question": "Which practice best addresses this?",
+    "question": "Post-launch, an assistant's answer quality slowly drifts worse over several weeks even though nothing was redeployed, and the team has no ongoing measurement in place, only noticing the problem once complaints spike. Which practice best addresses this?",
     "options": [
       {
         "key": "A",
@@ -1797,22 +1212,7 @@
     "id": "gov-01",
     "created": "2026-07-22",
     "domain": "Governance, Safety & Risk Management",
-    "scenario": "A financial-advice assistant can autonomously execute trades once it forms a recommendation. Compliance requires that no trade executes without a licensed human's explicit approval, regardless of model confidence.",
-    "constraints": [
-      {
-        "label": "Regulatory",
-        "text": "Human approval is mandatory before execution."
-      },
-      {
-        "label": "Determinism",
-        "text": "Approval must be guaranteed, not probabilistic."
-      },
-      {
-        "label": "Accountability",
-        "text": "A named human must sign off."
-      }
-    ],
-    "question": "Which control best satisfies the requirement?",
+    "question": "A financial-advice assistant can autonomously execute trades once it forms a recommendation, but compliance requires that no trade ever executes without a licensed human's explicit approval, regardless of model confidence, and that approval must be guaranteed rather than probabilistic, with a named human accountable for sign-off. Which control best satisfies the requirement?",
     "options": [
       {
         "key": "A",
@@ -1843,22 +1243,7 @@
     "id": "gov-02",
     "created": "2026-07-22",
     "domain": "Governance, Safety & Risk Management",
-    "scenario": "A hospital wants to deploy a Claude-based assistant that processes protected health information. Legal asks how compliance obligations should shape the architecture before any build.",
-    "constraints": [
-      {
-        "label": "Regulation",
-        "text": "HIPAA governs PHI handling."
-      },
-      {
-        "label": "Data flow",
-        "text": "PHI must be protected in transit, at rest, and in logs."
-      },
-      {
-        "label": "Vendor terms",
-        "text": "Data-handling agreements must be in place."
-      }
-    ],
-    "question": "Which approach best incorporates compliance into the design?",
+    "question": "A hospital wants to deploy a Claude-based assistant that processes protected health information, and legal asks how HIPAA compliance obligations should shape the architecture before any build begins — PHI must be protected in transit, at rest, and in logs, and appropriate data-handling agreements must be in place. Which approach best incorporates compliance into the design?",
     "options": [
       {
         "key": "A",
@@ -1889,22 +1274,7 @@
     "id": "gov-03",
     "created": "2026-07-22",
     "domain": "Governance, Safety & Risk Management",
-    "scenario": "A hiring-screening assistant is found to rank candidates from certain neighborhoods lower, tracking a proxy for a protected attribute. Leadership wants to address fairness and defend the decision process.",
-    "constraints": [
-      {
-        "label": "Fairness",
-        "text": "Outcomes must not disadvantage protected groups."
-      },
-      {
-        "label": "Transparency",
-        "text": "Decisions must be explainable and auditable."
-      },
-      {
-        "label": "Proxy risk",
-        "text": "Features can encode protected attributes indirectly."
-      }
-    ],
-    "question": "What is the most responsible course of action?",
+    "question": "A hiring-screening assistant is found to rank candidates from certain neighborhoods lower, tracking a proxy for a protected attribute, and leadership wants to address fairness and be able to defend the decision process, knowing that features can encode protected attributes indirectly and that decisions must remain explainable and auditable. What is the most responsible course of action?",
     "options": [
       {
         "key": "A",
@@ -1935,22 +1305,7 @@
     "id": "gov-04",
     "created": "2026-07-22",
     "domain": "Governance, Safety & Risk Management",
-    "scenario": "An architect enumerates failure modes for an LLM customer assistant before launch: it may hallucinate, be prompt-injected via user content, leak system instructions, or take unauthorized actions via tools. Leadership wants prioritized guardrails.",
-    "constraints": [
-      {
-        "label": "Failure modes",
-        "text": "Multiple distinct LLM risks identified."
-      },
-      {
-        "label": "Layered defense",
-        "text": "Prefer defense-in-depth over one control."
-      },
-      {
-        "label": "Impact",
-        "text": "Unauthorized actions have the highest blast radius."
-      }
-    ],
-    "question": "Which guardrail strategy is soundest?",
+    "question": "An architect enumerates failure modes for an LLM customer assistant before launch — it may hallucinate, be prompt-injected via user content, leak system instructions, or take unauthorized actions via tools — and leadership wants prioritized guardrails that favor defense-in-depth over a single control, with the highest priority going to the failure mode with the largest blast radius (unauthorized actions). Which guardrail strategy is soundest?",
     "options": [
       {
         "key": "A",
@@ -1981,22 +1336,7 @@
     "id": "gov-05",
     "created": "2026-07-22",
     "domain": "Governance, Safety & Risk Management",
-    "scenario": "A public-sector deployment must run within a US federal compliance boundary and demonstrate authorized, monitored, access-controlled operation for a government workload.",
-    "constraints": [
-      {
-        "label": "Framework",
-        "text": "FedRAMP-style authorization is required."
-      },
-      {
-        "label": "Boundary",
-        "text": "Workload must run within an authorized environment."
-      },
-      {
-        "label": "Evidence",
-        "text": "Continuous monitoring and access control must be demonstrable."
-      }
-    ],
-    "question": "Which is the most appropriate governance stance?",
+    "question": "A public-sector deployment must run within a US federal compliance boundary and demonstrate FedRAMP-style authorized, monitored, access-controlled operation for a government workload, with continuous monitoring and access control that must be demonstrable as evidence. Which is the most appropriate governance stance?",
     "options": [
       {
         "key": "A",
@@ -2027,22 +1367,7 @@
     "id": "gov-06",
     "created": "2026-07-22",
     "domain": "Governance, Safety & Risk Management",
-    "scenario": "A multi-issue support agent handles refunds. Policy allows automatic refunds up to $500; anything above must go to a human. The team currently relies on a system-prompt line saying 'do not refund more than $500 automatically,' and occasional over-limit refunds have slipped through.",
-    "constraints": [
-      {
-        "label": "Hard limit",
-        "text": "Refunds over $500 must never auto-execute."
-      },
-      {
-        "label": "Observed leakage",
-        "text": "Prompt-only enforcement has failed intermittently."
-      },
-      {
-        "label": "Compliance",
-        "text": "The threshold is a firm business rule."
-      }
-    ],
-    "question": "Which control best enforces the threshold?",
+    "question": "A multi-issue support agent handles refunds under a policy that allows automatic refunds up to $500, with anything above that requiring a human — but the team currently relies only on a system-prompt line saying 'do not refund more than $500 automatically,' and occasional over-limit refunds have slipped through this firm business rule. Which control best enforces the threshold?",
     "options": [
       {
         "key": "A",
@@ -2073,22 +1398,7 @@
     "id": "gov-07",
     "created": "2026-07-22",
     "domain": "Governance, Safety & Risk Management",
-    "scenario": "A GDPR-governed EU assistant stores full conversation transcripts, including personal data, indefinitely, and has no mechanism for users to obtain or delete their data. Legal flags multiple gaps.",
-    "constraints": [
-      {
-        "label": "Data subject rights",
-        "text": "Users can request access and erasure."
-      },
-      {
-        "label": "Minimization",
-        "text": "Only necessary personal data should be retained, for a limited time."
-      },
-      {
-        "label": "Lawful basis",
-        "text": "Processing must be justified and documented."
-      }
-    ],
-    "question": "Which redesign best addresses the compliance gaps?",
+    "question": "A GDPR-governed EU assistant stores full conversation transcripts, including personal data, indefinitely, with no mechanism for users to obtain or delete their data, and legal has flagged multiple gaps: data-subject access and erasure rights, minimization and time-limited retention, and a documented, justified lawful basis for processing. Which redesign best addresses the compliance gaps?",
     "options": [
       {
         "key": "A",
@@ -2119,22 +1429,7 @@
     "id": "gov-08",
     "created": "2026-07-22",
     "domain": "Governance, Safety & Risk Management",
-    "scenario": "An agent autonomously resolves cases but occasionally encounters situations where policy is silent or ambiguous. Currently it improvises a decision, sometimes contradicting later human rulings. The team wants a safe pattern for these gaps.",
-    "constraints": [
-      {
-        "label": "Policy gaps",
-        "text": "Some cases fall outside written policy."
-      },
-      {
-        "label": "Risk",
-        "text": "Improvised decisions create inconsistency and liability."
-      },
-      {
-        "label": "Oversight",
-        "text": "Humans must own genuinely ambiguous calls."
-      }
-    ],
-    "question": "Which human-in-the-loop pattern is most appropriate?",
+    "question": "An agent autonomously resolves cases but occasionally hits situations where policy is silent or ambiguous; currently it improvises a decision, sometimes contradicting later human rulings, creating inconsistency and liability risk that the team wants a safe human-in-the-loop pattern to prevent, since humans must own genuinely ambiguous calls. Which human-in-the-loop pattern is most appropriate?",
     "options": [
       {
         "key": "A",
@@ -2165,22 +1460,7 @@
     "id": "stk-01",
     "created": "2026-07-22",
     "domain": "Stakeholder Communication & Lifecycle Management",
-    "scenario": "A client says 'we want an AI to handle our customer emails.' The architect must run discovery before proposing anything, but the client keeps jumping to solutions (which model, which vendor).",
-    "constraints": [
-      {
-        "label": "Ambiguity",
-        "text": "The business problem is under-specified."
-      },
-      {
-        "label": "Solution-jumping",
-        "text": "Client fixates on tools, not outcomes."
-      },
-      {
-        "label": "Foundations",
-        "text": "Scope and success criteria are undefined."
-      }
-    ],
-    "question": "What should the architect prioritize first?",
+    "question": "A client says 'we want an AI to handle our customer emails,' but keeps jumping straight to solution details like which model or vendor to use before the architect can run discovery on an under-specified business problem with undefined scope and success criteria. What should the architect prioritize first?",
     "options": [
       {
         "key": "A",
@@ -2211,22 +1491,7 @@
     "id": "stk-02",
     "created": "2026-07-22",
     "domain": "Stakeholder Communication & Lifecycle Management",
-    "scenario": "An architect must present a design decision to a mixed audience: engineers want the trade-off detail, while executives want cost, risk, and timeline implications. A single dense technical deck previously lost the executives.",
-    "constraints": [
-      {
-        "label": "Audience",
-        "text": "Technical and executive stakeholders together."
-      },
-      {
-        "label": "Trade-offs",
-        "text": "The decision involves accuracy/cost/latency trade-offs."
-      },
-      {
-        "label": "Actionability",
-        "text": "Executives must be able to decide."
-      }
-    ],
-    "question": "How should the architect communicate the decision most effectively?",
+    "question": "An architect must present a design decision to a mixed audience — engineers who want the trade-off detail, and executives who want cost, risk, and timeline implications — after a previous single dense technical deck lost the executives, even though the decision genuinely involves accuracy/cost/latency trade-offs and executives still need to be able to decide. How should the architect communicate the decision most effectively?",
     "options": [
       {
         "key": "A",
@@ -2257,22 +1522,7 @@
     "id": "stk-03",
     "created": "2026-07-22",
     "domain": "Stakeholder Communication & Lifecycle Management",
-    "scenario": "A stakeholder expects the assistant to be '100% accurate' and available instantly. The architect knows realistic figures are ~95% on the hard segment and a p95 latency of a few seconds. Expectations are misaligned before launch.",
-    "constraints": [
-      {
-        "label": "Expectation gap",
-        "text": "Stakeholder expects perfection and instant response."
-      },
-      {
-        "label": "Reality",
-        "text": "Achievable accuracy and latency are bounded."
-      },
-      {
-        "label": "SLA",
-        "text": "Commitments must be sustainable."
-      }
-    ],
-    "question": "What is the best expectation-alignment approach?",
+    "question": "A stakeholder expects the assistant to be '100% accurate' and available instantly, but the architect knows realistic figures are around 95% on the hard segment with a p95 latency of a few seconds, and any commitments made need to be sustainable, not just reassuring in the moment. What is the best expectation-alignment approach?",
     "options": [
       {
         "key": "A",
@@ -2303,22 +1553,7 @@
     "id": "stk-04",
     "created": "2026-07-22",
     "domain": "Stakeholder Communication & Lifecycle Management",
-    "scenario": "After a successful pilot, the project must transition from the delivery team to the client's operations team. There is no documentation of the architecture, prompts, guardrails, or known limitations, and the ops team has not been briefed.",
-    "constraints": [
-      {
-        "label": "Handoff",
-        "text": "Ownership moves to a different team."
-      },
-      {
-        "label": "Continuity",
-        "text": "Ops must operate and iterate safely."
-      },
-      {
-        "label": "Knowledge",
-        "text": "Design rationale currently lives only with the builders."
-      }
-    ],
-    "question": "What is the most important lifecycle activity before handoff?",
+    "question": "After a successful pilot, a project must transition from the delivery team to the client's operations team, but there's no documentation of the architecture, prompts, guardrails, or known limitations, the ops team hasn't been briefed, and the design rationale currently lives only in the builders' heads. What is the most important lifecycle activity before handoff?",
     "options": [
       {
         "key": "A",
@@ -2349,22 +1584,7 @@
     "id": "stk-05",
     "created": "2026-07-22",
     "domain": "Stakeholder Communication & Lifecycle Management",
-    "scenario": "Mid-project, the client requests a major new capability that would jeopardize the agreed timeline and SLA. The architect must manage the feedback and expectations without simply refusing or silently absorbing the scope.",
-    "constraints": [
-      {
-        "label": "Scope change",
-        "text": "New request affects timeline and SLA."
-      },
-      {
-        "label": "Relationship",
-        "text": "Client relationship must stay healthy."
-      },
-      {
-        "label": "Commitments",
-        "text": "Existing SLA commitments are at risk."
-      }
-    ],
-    "question": "What is the best way to handle the request?",
+    "question": "Mid-project, a client requests a major new capability that would jeopardize the agreed timeline and SLA, and the architect must manage the feedback and expectations without simply refusing outright or silently absorbing the scope, while keeping both the client relationship and the existing commitments intact. What is the best way to handle the request?",
     "options": [
       {
         "key": "A",
@@ -2395,22 +1615,7 @@
     "id": "stk-06",
     "created": "2026-07-22",
     "domain": "Stakeholder Communication & Lifecycle Management",
-    "scenario": "During discovery for a document-processing solution, the architect gathers requirements only from the project sponsor. After delivery, front-line clerks reveal the real documents include many edge cases the sponsor never mentioned, and the system fails on them.",
-    "constraints": [
-      {
-        "label": "Requirement completeness",
-        "text": "Real workflow detail lives with front-line users."
-      },
-      {
-        "label": "Edge cases",
-        "text": "Actual documents are messier than described."
-      },
-      {
-        "label": "Discovery quality",
-        "text": "Single-source requirements were incomplete."
-      }
-    ],
-    "question": "What discovery practice would most have prevented this?",
+    "question": "During discovery for a document-processing solution, the architect gathers requirements only from the project sponsor; after delivery, front-line clerks reveal that the real documents include many edge cases the sponsor never mentioned, and the system fails on them because the true workflow detail lived with the front-line users all along. What discovery practice would most have prevented this?",
     "options": [
       {
         "key": "A",
@@ -2441,22 +1646,7 @@
     "id": "stk-07",
     "created": "2026-07-22",
     "domain": "Stakeholder Communication & Lifecycle Management",
-    "scenario": "An architect wants to keep improving the assistant after launch based on real usage, but there is no channel for users to report bad answers and no cadence for reviewing and acting on feedback.",
-    "constraints": [
-      {
-        "label": "Feedback loop",
-        "text": "No structured mechanism to capture user feedback."
-      },
-      {
-        "label": "Iteration",
-        "text": "Improvements should be driven by real usage."
-      },
-      {
-        "label": "Cadence",
-        "text": "Review and action must be regular."
-      }
-    ],
-    "question": "Which lifecycle practice best supports continuous improvement?",
+    "question": "An architect wants to keep improving an assistant after launch based on real usage, but there's no channel for users to report bad answers and no regular cadence for reviewing and acting on feedback, even though improvements should be driven by actual usage on a consistent schedule. Which lifecycle practice best supports continuous improvement?",
     "options": [
       {
         "key": "A",
@@ -2487,22 +1677,7 @@
     "id": "stk-08",
     "created": "2026-07-22",
     "domain": "Stakeholder Communication & Lifecycle Management",
-    "scenario": "An architect is documenting a delivered system so another team can implement similar solutions. The current document is a narrative of what was built but gives no guidance on how to make the same decisions in a new context.",
-    "constraints": [
-      {
-        "label": "Reusability",
-        "text": "Other teams must apply the approach elsewhere."
-      },
-      {
-        "label": "Decision guidance",
-        "text": "The 'why' behind choices must transfer."
-      },
-      {
-        "label": "Implementation",
-        "text": "Readers need actionable guidance."
-      }
-    ],
-    "question": "What should the documentation add to be most useful?",
+    "question": "An architect is documenting a delivered system so another team can implement similar solutions elsewhere, but the current document is just a narrative of what was built, with no guidance on how to make the same decisions in a new context — readers need the 'why' behind the choices to transfer, not just a description of what happened. What should the documentation add to be most useful?",
     "options": [
       {
         "key": "A",
@@ -2533,22 +1708,7 @@
     "id": "dev-01",
     "created": "2026-07-22",
     "domain": "Developer Productivity & Operational Enablement",
-    "scenario": "A team adopts Claude Code but each developer has divergent local instructions, so generated code violates shared standards inconsistently. Standards live in individual developers' personal user-level config, not in the repo.",
-    "constraints": [
-      {
-        "label": "Consistency",
-        "text": "All developers must get the same standards."
-      },
-      {
-        "label": "Sharing",
-        "text": "Standards must travel with the repository."
-      },
-      {
-        "label": "Onboarding",
-        "text": "New members should inherit standards automatically."
-      }
-    ],
-    "question": "Where should the shared standards live for consistent team application?",
+    "question": "A team adopts Claude Code, but each developer has divergent local instructions, so generated code violates shared standards inconsistently, since those standards live in individual developers' personal user-level configuration rather than in the repository — and new team members need to inherit the same standards automatically. Where should the shared standards live for consistent team application?",
     "options": [
       {
         "key": "A",
@@ -2579,22 +1739,7 @@
     "id": "dev-02",
     "created": "2026-07-22",
     "domain": "Developer Productivity & Operational Enablement",
-    "scenario": "A team wants a reusable /review command running their code-review checklist, available to every developer automatically when they clone the repository.",
-    "constraints": [
-      {
-        "label": "Availability",
-        "text": "Must be present for all developers on clone/pull."
-      },
-      {
-        "label": "Sharing",
-        "text": "Version-controlled, not personal."
-      },
-      {
-        "label": "Reuse",
-        "text": "Same checklist for the whole team."
-      }
-    ],
-    "question": "Where should the command be defined?",
+    "question": "A team wants a reusable /review command that runs their code-review checklist, available to every developer automatically when they clone the repository, version-controlled rather than personal, so the whole team uses the same checklist. Where should the command be defined?",
     "options": [
       {
         "key": "A",
@@ -2625,22 +1770,7 @@
     "id": "dev-03",
     "created": "2026-07-22",
     "domain": "Developer Productivity & Operational Enablement",
-    "scenario": "A developer runs a codebase-analysis skill that emits very verbose discovery output, which then clutters the main conversation and crowds out the actual task context.",
-    "constraints": [
-      {
-        "label": "Context hygiene",
-        "text": "Verbose output must not pollute the main session."
-      },
-      {
-        "label": "Isolation",
-        "text": "Discovery should run separately and return a summary."
-      },
-      {
-        "label": "Productivity",
-        "text": "Main task context must be preserved."
-      }
-    ],
-    "question": "Which configuration best isolates the verbose skill?",
+    "question": "A developer runs a codebase-analysis skill that emits very verbose discovery output, which clutters the main conversation and crowds out the actual task context — the verbose output needs to run in isolation and return just a summary so the main task context is preserved. Which configuration best isolates the verbose skill?",
     "options": [
       {
         "key": "A",
@@ -2671,22 +1801,7 @@
     "id": "dev-04",
     "created": "2026-07-22",
     "domain": "Developer Productivity & Operational Enablement",
-    "scenario": "A developer is debugging a failing function with a clear stack trace pointing to one file; the fix is a single well-understood change. Separately, they must plan a library migration affecting 45+ files with multiple valid approaches.",
-    "constraints": [
-      {
-        "label": "Task A",
-        "text": "Single-file, well-understood bug fix."
-      },
-      {
-        "label": "Task B",
-        "text": "Large, multi-file migration with architectural choices."
-      },
-      {
-        "label": "Efficiency",
-        "text": "Match the mode to the task."
-      }
-    ],
-    "question": "Which use of plan mode vs direct execution is correct?",
+    "question": "A developer is debugging a failing function with a clear stack trace pointing to one file, where the fix is a single well-understood change, and separately must plan a library migration affecting 45+ files with multiple valid architectural approaches — the two tasks call for very different levels of upfront planning. Which use of plan mode vs. direct execution is correct?",
     "options": [
       {
         "key": "A",
@@ -2717,22 +1832,7 @@
     "id": "dev-05",
     "created": "2026-07-22",
     "domain": "Developer Productivity & Operational Enablement",
-    "scenario": "A team integrating Claude Code into CI finds the job hangs waiting for interactive input, and downstream steps cannot parse the free-text output to post inline PR comments.",
-    "constraints": [
-      {
-        "label": "Non-interactive",
-        "text": "CI must not wait for interactive input."
-      },
-      {
-        "label": "Machine-readable",
-        "text": "Output must be parseable for automated posting."
-      },
-      {
-        "label": "Automation",
-        "text": "Findings feed an automated PR-comment step."
-      }
-    ],
-    "question": "Which configuration fixes both problems?",
+    "question": "A team integrating Claude Code into CI finds the job hangs waiting for interactive input, and downstream steps can't parse the free-text output to post inline PR comments, even though CI must run non-interactively and findings need to be machine-readable to feed an automated PR-comment step. Which configuration fixes both problems?",
     "options": [
       {
         "key": "A",
